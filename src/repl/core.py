@@ -70,7 +70,19 @@ from pathlib import Path
 import asyncio
 import sys
 import json
+import random
 from typing import Any
+
+# Kooky status words shown while Kiba is busy processing a response
+KIBA_STATUS_WORDS = [
+    "Howling", "Prowling", "Sniffing", "Snarling", "Pouncing", "Burrowing",
+    "Hunting", "Bamboozling", "Noodling", "Wrangling", "Skedaddling",
+    "Hornswoggling", "Gallivanting", "Flummoxing", "Finagling", "Marinating",
+    "Conjuring", "Scheming", "Tinkering", "Brewing", "Ruminating", "Sketching",
+    "Whittling", "Zigzagging", "Moonwalking", "Canoodling", "Fiddle-faddling",
+    "Reticulating", "Philosophising", "Crunching", "Forging", "Untangling",
+    "Loping", "Skulking", "Bristling", "Tracking", "Scampering", "Rummaging",
+]
 
 from src.agent import Session
 from src.config import get_provider_config
@@ -1207,7 +1219,7 @@ class KibaREPL:
                 self.console.print(chunk, end="", markup=False, highlight=False, soft_wrap=True)
 
             if self._should_try_direct_stream(user_input):
-                self._current_status = self.console.status("[dim]Thinking...[/dim]", spinner="dots")
+                self._current_status = self.console.status(f"[dim]{random.choice(KIBA_STATUS_WORDS)}…[/dim]", spinner="dots")
                 with self._current_status:
                     direct_response = self._stream_direct_response(on_text_chunk=on_text_chunk)
                 self._current_status = None
@@ -1216,7 +1228,7 @@ class KibaREPL:
                     return
 
             # Use agent loop with tools for any provider that supports it
-            self._current_status = self.console.status("[dim]Thinking...[/dim]", spinner="dots")
+            self._current_status = self.console.status(f"[dim]{random.choice(KIBA_STATUS_WORDS)}…[/dim]", spinner="dots")
             with self._current_status:
                 result = run_agent_loop(
                     conversation=self.session.conversation,
