@@ -378,87 +378,112 @@ def run_agent_loop(
                 num_turns=turn_count,
             )
 
-        # Call each tool
-        for tool_use in tool_uses:
+        # ---- Execute tools: read-only ones concurrently, side-effecting ones serially ----
+        from ..tool_system.protocol import ToolCall
+        from concurrent.futures import ThreadPoolExecutor
+
+        def _is_readonly(name: str) -> bool:
+            t = tool_registry.get(name)
+            try:
+                return bool(t and t.spec().is_read_only)
+            except Exception:
+                return False
+
+        # Fire tool_use events upfront so the "running…" indicators still appear in order
+        for tu in tool_uses:
+            _safe_call_handler(
+                on_event,
+                ToolEvent(kind="tool_use", tool_name=tu["name"],
+                          tool_input=tu["input"], tool_use_id=tu["id"]),
+            )
+
+        def _dispatch(tu):
+            return tool_registry.dispatch(
+                ToolCall(name=tu["name"], input=tu["input"], tool_use_id=tu["id"]),
+                tool_context,
+            )
+
+        outcomes: dict[int, tuple] = {}  # index -> (result, exception)
+        ro_idx = [i for i, tu in enumerate(tool_uses) if _is_readonly(tu["name"])]
+        ro_set = set(ro_idx)
+        serial_idx = [i for i in range(len(tool_uses)) if i not in ro_set]
+
+        # Read-only tools (Read/Grep/Glob/WebFetch/...) run in parallel — big latency win
+        if len(ro_idx) > 1:
+            with ThreadPoolExecutor(max_workers=min(8, len(ro_idx))) as ex:
+                futs = {ex.submit(_dispatch, tool_uses[i]): i for i in ro_idx}
+                for fut in futs:
+                    i = futs[fut]
+                    try:
+                        outcomes[i] = (fut.result(), None)
+                    except Exception as e:
+                        outcomes[i] = (None, e)
+        else:
+            for i in ro_idx:
+                try:
+                    outcomes[i] = (_dispatch(tool_uses[i]), None)
+                except Exception as e:
+                    outcomes[i] = (None, e)
+
+        # Side-effecting tools (Bash/Write/Edit/...) run serially in order, on this thread
+        for i in serial_idx:
+            try:
+                outcomes[i] = (_dispatch(tool_uses[i]), None)
+            except Exception as e:
+                outcomes[i] = (None, e)
+
+        # ---- Process results in the ORIGINAL tool_use order ----
+        for i, tool_use in enumerate(tool_uses):
             tool_id = tool_use["id"]
             tool_name = tool_use["name"]
             tool_input = tool_use["input"]
+            result, err = outcomes.get(i, (None, RuntimeError("tool not executed")))
 
-            try:
-                _safe_call_handler(
-                    on_event,
-                    ToolEvent(
-                        kind="tool_use",
-                        tool_name=tool_name,
-                        tool_input=tool_input,
-                        tool_use_id=tool_id,
-                    ),
-                )
-                # Use dispatch to get proper validation and result wrapping
-                from ..tool_system.protocol import ToolCall
-                call = ToolCall(name=tool_name, input=tool_input, tool_use_id=tool_id)
-                result = tool_registry.dispatch(call, tool_context)
-                result_output = result.output
-                if tool_name.lower() == "sendusermessage" and isinstance(result_output, dict):
-                    msg = result_output.get("message")
-                    if isinstance(msg, str):
-                        last_user_visible_message = msg
-                if tool_name.lower() == "structuredoutput" and isinstance(result_output, dict):
-                    payload = result_output.get("structured_output")
-                    try:
-                        last_user_visible_message = json.dumps(payload, ensure_ascii=False, indent=2)
-                    except Exception:
-                        last_user_visible_message = str(payload)
-
-                if verbose:
-                    use_summary = summarize_tool_use(tool_name, tool_input)
-                    if use_summary:
-                        print(f"{tool_name} · {use_summary}")
-                    summary = summarize_tool_result(tool_name, result_output)
-                    print(f"{summary}")
-
-                _safe_call_handler(
-                    on_event,
-                    ToolEvent(
-                        kind="tool_result",
-                        tool_name=tool_name,
-                        tool_output=result_output,
-                        tool_use_id=tool_id,
-                        is_error=result.is_error,
-                    ),
-                )
-                if _is_anthropic_provider(provider):
-                    conversation.add_tool_result_message(tool_id, result_output)
-                else:
-                    # Add tool result in OpenAI format
-                    openai_messages.append({
-                        "role": "tool",
-                        "tool_call_id": tool_id,
-                        "content": _build_openai_tool_result_content(result_output)
-                    })
-            except Exception as e:
-                error_str = f"Error: {e}"
+            if err is not None:
+                error_str = f"Error: {err}"
                 if verbose:
                     print(f"[Tool Error] {error_str}")
                 _safe_call_handler(
                     on_event,
-                    ToolEvent(
-                        kind="tool_error",
-                        tool_name=tool_name,
-                        tool_input=tool_input,
-                        tool_use_id=tool_id,
-                        is_error=True,
-                        error=error_str,
-                    ),
+                    ToolEvent(kind="tool_error", tool_name=tool_name, tool_input=tool_input,
+                              tool_use_id=tool_id, is_error=True, error=error_str),
                 )
                 if _is_anthropic_provider(provider):
                     conversation.add_tool_result_message(tool_id, error_str, is_error=True)
                 else:
-                    openai_messages.append({
-                        "role": "tool",
-                        "tool_call_id": tool_id,
-                        "content": error_str
-                    })
+                    openai_messages.append({"role": "tool", "tool_call_id": tool_id, "content": error_str})
+                continue
+
+            result_output = result.output
+            if tool_name.lower() == "sendusermessage" and isinstance(result_output, dict):
+                msg = result_output.get("message")
+                if isinstance(msg, str):
+                    last_user_visible_message = msg
+            if tool_name.lower() == "structuredoutput" and isinstance(result_output, dict):
+                payload = result_output.get("structured_output")
+                try:
+                    last_user_visible_message = json.dumps(payload, ensure_ascii=False, indent=2)
+                except Exception:
+                    last_user_visible_message = str(payload)
+
+            if verbose:
+                use_summary = summarize_tool_use(tool_name, tool_input)
+                if use_summary:
+                    print(f"{tool_name} · {use_summary}")
+                print(f"{summarize_tool_result(tool_name, result_output)}")
+
+            _safe_call_handler(
+                on_event,
+                ToolEvent(kind="tool_result", tool_name=tool_name, tool_output=result_output,
+                          tool_use_id=tool_id, is_error=result.is_error),
+            )
+            if _is_anthropic_provider(provider):
+                conversation.add_tool_result_message(tool_id, result_output)
+            else:
+                openai_messages.append({
+                    "role": "tool", "tool_call_id": tool_id,
+                    "content": _build_openai_tool_result_content(result_output),
+                })
 
     # Reached max turns
     return AgentLoopResult(
