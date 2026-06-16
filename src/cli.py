@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
 from rich.console import Console
-from rich.prompt import Prompt
+from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
 
@@ -143,6 +144,16 @@ SETUP_PRESETS = [
 ]
 
 
+# z.ai keys look like "<32 hex>.<suffix>" — sending one to the official Anthropic or
+# OpenAI endpoint is the #1 setup footgun (HTTP 400/401). We detect that shape so the
+# wizard can offer to switch to the GLM — z.ai preset automatically.
+_ZAI_KEY_RE = re.compile(r"[0-9a-fA-F]{32}\.[A-Za-z0-9]{8,}")
+
+
+def _looks_like_zai_key(api_key: str) -> bool:
+    return bool(_ZAI_KEY_RE.fullmatch((api_key or "").strip()))
+
+
 def _test_api_key(fmt: str, base_url: str, model: str, api_key: str):
     """Live-test an API key with a tiny request. Returns (ok: bool, detail: str)."""
     import json as _json
@@ -236,6 +247,47 @@ def handle_setup():
             break
 
         console.print(f"[red]✗ Key test failed:[/red] [dim]{detail}[/dim]")
+
+        # Smart hint: a z.ai-shaped key on a non-z.ai endpoint is the #1 footgun.
+        # Offer to switch to the GLM — z.ai preset and re-test the SAME key.
+        if _looks_like_zai_key(api_key) and "z.ai" not in base_url:
+            console.print(
+                "\n[bold yellow]💡 That looks like a z.ai key[/bold yellow] "
+                "[dim](format 32hex.suffix)[/dim], but this preset points at "
+                f"[dim]{base_url}[/dim]."
+            )
+            console.print(
+                "   z.ai keys must go through the [bold]GLM — z.ai Coding Plan[/bold] "
+                "preset (endpoint [dim]https://api.z.ai/api/anthropic[/dim], model "
+                "[dim]glm-5.2[/dim])."
+            )
+            if Confirm.ask(
+                "   Switch to GLM — z.ai and re-test this key?", default=True
+            ):
+                glm = next(
+                    p
+                    for p in SETUP_PRESETS
+                    if str(p.get("base_url", "")).startswith("https://api.z.ai")
+                )
+                provider, base_url, model, fmt = (
+                    glm["provider"],
+                    glm["base_url"],
+                    glm["model"],
+                    glm["format"],
+                )
+                preset = glm
+                console.print(f"\n[bold]{glm['label']}[/bold]")
+                console.print(f"  [dim]Endpoint:[/dim] {base_url}")
+                console.print(f"  [dim]Model:[/dim]    {model}")
+                console.print(
+                    "\n[dim]Re-testing your key against the z.ai endpoint…[/dim]"
+                )
+                ok, detail = _test_api_key(fmt, base_url, model, api_key)
+                if ok:
+                    console.print("[green]✓ Key works![/green]")
+                    break
+                console.print(f"[red]✗ Still failing:[/red] [dim]{detail}[/dim]")
+
         what = Prompt.ask(
             "What now?",
             choices=["retry", "save", "cancel"],
