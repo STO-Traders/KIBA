@@ -300,6 +300,7 @@ class KibaREPL:
         from src.hooks.runner import HookRunner
         self.hook_runner = HookRunner(self.settings, cwd=Path.cwd())
         self.tool_context.hook_runner = self.hook_runner
+        self.tool_context.provider = self.provider  # lets the Agent tool spawn subagents
 
         # Permission handler with status control for proper input handling
         self._current_status = None
