@@ -248,6 +248,8 @@ def run_agent_loop(
     verbose: bool = False,
     on_event: ToolEventHandler | None = None,
     on_text_chunk: TextChunkHandler | None = None,
+    system_prompt_override: str | None = None,
+    allowed_tools: set | None = None,
 ) -> AgentLoopResult:
     """Run agent loop: LLM -> tools -> LLM until no more tools or max turns.
 
@@ -277,6 +279,8 @@ def run_agent_loop(
     for spec in tool_registry.list_specs():
         if spec.name.lower() in hidden:
             continue
+        if allowed_tools is not None and spec.name not in allowed_tools and not spec.name.startswith("mcp__"):
+            continue
         tool_schemas.append({
             "name": spec.name,
             "description": spec.description,
@@ -288,7 +292,7 @@ def run_agent_loop(
     last_user_visible_message: str | None = None
     style_name = getattr(tool_context, "output_style_name", None)
     style_dir = getattr(tool_context, "output_style_dir", None)
-    style_prompt = resolve_output_style(style_name, style_dir).prompt
+    style_prompt = system_prompt_override or resolve_output_style(style_name, style_dir).prompt
     effective_system_prompt = _build_effective_system_prompt(style_prompt, tool_context)
 
     # Seed OpenAI messages from initial conversation messages

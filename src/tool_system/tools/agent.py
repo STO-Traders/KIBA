@@ -28,6 +28,7 @@ class AgentTool:
                 "additionalProperties": False,
                 "properties": {
                     "prompt": {"type": "string"},
+                    "agent_type": {"type": "string"},
                     "description": {"type": "string"},
                     "background": {"type": "boolean"},
                     "max_turns": {"type": "integer"},
@@ -76,6 +77,20 @@ class AgentTool:
         max_turns = tool_input.get("max_turns") or 30
         background = bool(tool_input.get("background", False))
 
+        # Optional custom agent type (.kiba/agents/*.md): persona + tool allowlist
+        agent_def = None
+        agent_type = tool_input.get("agent_type")
+        if isinstance(agent_type, str) and agent_type.strip():
+            from ...agents_registry import load_agent_types
+            cwd = getattr(context, "cwd", None) or getattr(context, "workspace_root", None)
+            agent_def = load_agent_types(cwd).get(agent_type.strip())
+            if agent_def is None:
+                return ToolResult(
+                    name="Agent",
+                    output={"error": f"unknown agent_type: {agent_type}"},
+                    is_error=True,
+                )
+
         def _execute() -> str:
             from ..agent_loop import run_agent_loop  # lazy: avoid circular import
             from ...agent.conversation import Conversation
@@ -91,6 +106,8 @@ class AgentTool:
                     tool_context=context,
                     max_turns=int(max_turns),
                     stream=False,
+                    system_prompt_override=(agent_def["prompt"] if agent_def else None),
+                    allowed_tools=(set(agent_def["tools"]) if agent_def and agent_def.get("tools") else None),
                 )
             finally:
                 context._subagent_depth = prev

@@ -1404,6 +1404,24 @@ class KibaREPL:
         self.console.print()
         return True
 
+    def _expand_mentions(self, text: str) -> str:
+        """Expand `@path` tokens by inlining the referenced file's contents (Claude Code @-mentions)."""
+        import re
+        cwd = self.tool_context.cwd or self.tool_context.workspace_root
+        additions = []
+        for m in re.finditer(r"(?<![\w@])@([^\s]+)", text or ""):
+            raw = m.group(1).rstrip(".,;:)")
+            try:
+                p = Path(raw).expanduser()
+                if not p.is_absolute():
+                    p = Path(cwd) / raw
+                if p.is_file():
+                    content = p.read_text(errors="replace")[:20000]
+                    additions.append(f"\n\n--- @{raw} ---\n{content}")
+            except Exception:
+                pass
+        return (text or "") + "".join(additions)
+
     def execute(self, prompt: str, max_turns: int = 30, images=None):
         """Run one agent turn and RETURN the AgentLoopResult (no printing/rendering).
 
@@ -1417,6 +1435,7 @@ class KibaREPL:
                 raise RuntimeError(up.message_text or "blocked by UserPromptSubmit hook")
             if up.context_text:
                 prompt = f"{prompt}\n\n{up.context_text}"
+        prompt = self._expand_mentions(prompt)
         if images:
             self.session.conversation.add_user_message_with_images(prompt, images)
         else:
@@ -1454,6 +1473,7 @@ class KibaREPL:
                 return 1
             if up.context_text:
                 prompt = f"{prompt}\n\n{up.context_text}"
+        prompt = self._expand_mentions(prompt)
         if images:
             self.session.conversation.add_user_message_with_images(prompt, images)
         else:
