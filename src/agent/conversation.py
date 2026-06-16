@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Any, Optional, Union
 from datetime import datetime
@@ -98,10 +99,19 @@ class Conversation:
                             "input": block.input
                         })
                     elif isinstance(block, ToolResultContentBlock):
+                        # The API expects tool_result content to be a string or a list of
+                        # content blocks — NOT a raw dict. Serialize dict/other results to
+                        # JSON so the model actually sees them (otherwise it reads "empty").
+                        rc = block.content
+                        if not isinstance(rc, (str, list)):
+                            try:
+                                rc = json.dumps(rc, ensure_ascii=False)
+                            except Exception:
+                                rc = str(rc)
                         content_blocks.append({
                             "type": "tool_result",
                             "tool_use_id": block.tool_use_id,
-                            "content": block.content,
+                            "content": rc,
                             "is_error": block.is_error
                         })
                 api_messages.append({"role": msg.role, "content": content_blocks})

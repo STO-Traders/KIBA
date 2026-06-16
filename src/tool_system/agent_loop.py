@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -264,9 +265,18 @@ def run_agent_loop(
     Returns:
         AgentLoopResult with final text response, usage info, and turn count
     """
-    # Convert tools to schemas (Anthropic format)
+    # Convert tools to schemas (Anthropic format). We HIDE meta/internal tools from the
+    # model: with 40+ tools, smaller models (e.g. GLM-5.2 on z.ai) grab the "ToolSearch"
+    # escape hatch instead of the right tool. All tools are passed directly, so ToolSearch
+    # is redundant anyway. Extend the hidden set with KIBA_HIDE_TOOLS=a,b,c.
+    hidden = {"toolsearch", "testingpermission"}
+    extra_hide = os.environ.get("KIBA_HIDE_TOOLS", "")
+    if extra_hide:
+        hidden |= {t.strip().lower() for t in extra_hide.split(",") if t.strip()}
     tool_schemas = []
     for spec in tool_registry.list_specs():
+        if spec.name.lower() in hidden:
+            continue
         tool_schemas.append({
             "name": spec.name,
             "description": spec.description,
