@@ -108,13 +108,13 @@ KIBA_STATUS_WORDS = [
     "Fuckin'-around", "Finding-out", "Clusterfucking", "Shitcanning",
     "Bullshitting", "Jackassing", "Bastardizing", "Pissing-about",
     "Buggering-about", "Twatwaffling", "Arsing-about", "Shit-shoveling",
-    "Crap-flinging", "Goddamn-wrangling", "Hell-raising", "Shit-stirring",
+    "Crap-flinging", "Hell-raising", "Shit-stirring",
     "Ballsing-it-up", "Cocking-it-up", "Bollocking", "Dipshittery",
     "Assclownery", "Horse-shitting", "Batshittery", "Fuckery-manufacturing",
     "Numbnutsing", "Dumbassing", "Half-assing", "Full-assing", "Pissant-ing",
     "Shitstorming", "Dumpster-firing", "Tomfuckery", "Asshattery",
     "Fucknuggeting", "Cussing-a-blue-streak", "Damn-it-all-ing",
-    "Son-of-a-bitching", "Raising-hell", "Goddamn-fiddling", "Shit-the-bedding",
+    "Son-of-a-bitching", "Raising-hell", "Shit-the-bedding",
 ]
 
 from src.agent import Session
