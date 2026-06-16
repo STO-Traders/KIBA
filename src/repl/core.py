@@ -1560,7 +1560,7 @@ class KibaREPL:
         self.session.conversation.add_user_message(user_input)
 
         try:
-            self.console.print("\n[bold]Assistant[/bold]")
+            self.console.print("\n[bold]🐺 KIBA[/bold]")
 
             stream_started = False
 
