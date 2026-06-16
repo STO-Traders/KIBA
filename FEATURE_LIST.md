@@ -32,7 +32,7 @@
 
 | 能力 | 状态 | 当前情况 |
 |------|------|----------|
-| CLI 启动入口 | ✅ | 已支持 `clawd`、`login`、`config`、`--version` |
+| CLI 启动入口 | ✅ | 已支持 `kiba`、`login`、`config`、`--version` |
 | 交互式 REPL | ✅ | 支持交互式输出、历史记录、Tab 补全、多行输入 |
 | Slash Commands | ✅ | 已支持 `/help`、`/clear`、`/save`、`/load`、`/multiline`、`/exit` |
 | 多 Provider 抽象 | ✅ | 已支持 Anthropic / OpenAI / GLM |

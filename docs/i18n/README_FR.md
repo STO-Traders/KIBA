@@ -10,8 +10,8 @@
 
 ***
 
-[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Clawd-Code?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Clawd-Code/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Clawd-Code?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Clawd-Code/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Kiba/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Kiba/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 
@@ -23,23 +23,23 @@
 
 ## 🎯 Qu'est-ce que c'est ?
 
-**Clawd Codex** est une **réécriture complète en Python** de Claude Code, basée sur le **vrai code source TypeScript**.
+**Kiba** est une **réécriture complète en Python** de Claude Code, basée sur le **vrai code source TypeScript**.
 
 ### ⚠️ Important : Ce n'est PAS juste du code source
 
-**Contrairement au code source TypeScript divulgué**, Clawd Codex est un **outil CLI entièrement fonctionnel** :
+**Contrairement au code source TypeScript divulgué**, Kiba est un **outil CLI entièrement fonctionnel** :
 
 <div align="center">
 
 | **Core Features Showcase** |
 |:---:|
-| ![Bash Execution](../../assets/clawd-code-bash.png) |
+| ![Bash Execution](../../assets/kiba-bash.png) |
 | *Real-time Tool Execution* |
 | ![Web Fetch](../../assets/claude-code-webfetch.png) |
 | *Instant Web Content Extraction* |
-| ![File Operations](../../assets/clawd-code-write-read.png) |
+| ![File Operations](../../assets/kiba-write-read.png) |
 | *Seamless Coding & Debugging* |
-| ![Skills (Slash Commands)](../../assets/clawd-code-skill.png) |
+| ![Skills (Slash Commands)](../../assets/kiba-skill.png) |
 | *Flexible Skill Systems* |
 
 **Vrai CLI • Vraie utilisation • Vraie communauté**
@@ -59,11 +59,11 @@
 
 ## ⭐ Star History
 
-<a href="https://www.star-history.com/?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=GPT-AGI%2FKiba&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
  </picture>
 </a>
 
@@ -79,7 +79,7 @@ providers = ["Anthropic Claude", "OpenAI GPT", "Zhipu GLM"]  # + facile à éten
 
 ```text
 >>> Bonjour !
-Assistant: Salut ! Je suis Clawd Codex, une réimplémentation en Python...
+Assistant: Salut ! Je suis Kiba, une réimplémentation en Python...
 
 >>> /help         # Afficher les commandes
 >>> /             # Afficher commandes & skills
@@ -91,15 +91,15 @@ Assistant: Salut ! Je suis Clawd Codex, une réimplémentation en Python...
 
 ### Skills (Slash Commands)
 
-See [README.md](../../README.md#skills-slash-commands) for a quick tutorial on creating skills under `.clawd/skills/<skill-name>/SKILL.md`.
+See [README.md](../../README.md#skills-slash-commands) for a quick tutorial on creating skills under `.kiba/skills/<skill-name>/SKILL.md`.
 
 ### CLI complet
 
 ```bash
-clawd              # Démarrer le REPL
-clawd login        # Configurer l'API
-clawd --version    # Vérifier la version
-clawd config       # Voir les paramètres
+kiba              # Démarrer le REPL
+kiba login        # Configurer l'API
+kiba --version    # Vérifier la version
+kiba config       # Voir les paramètres
 ```
 
 ***
@@ -120,8 +120,8 @@ clawd config       # Voir les paramètres
 ### Installation
 
 ```bash
-git clone https://github.com/GPT-AGI/Clawd-Code.git
-cd Clawd-Code
+git clone https://github.com/GPT-AGI/Kiba.git
+cd Kiba
 
 # Créer un venv (uv recommandé)
 uv venv --python 3.11
@@ -147,7 +147,7 @@ Ce processus va :
 4. enregistrer optionnellement un modèle par défaut
 5. définir le fournisseur sélectionné comme valeur par défaut
 
-Le fichier de configuration est enregistré dans `~/.clawd/config.json`. Exemple de structure :
+Le fichier de configuration est enregistré dans `~/.kiba/config.json`. Exemple de structure :
 
 ```json
 {
@@ -198,11 +198,11 @@ python -m src.cli --help   # Afficher l'aide
 
 ### Exemple de session
 
-![Exemple de session](../../assets/clawd-code-tool-skill-json.png)
+![Exemple de session](../../assets/kiba-tool-skill-json.png)
 
 ***
 
-## 🎓 Pourquoi Clawd Codex ?
+## 🎓 Pourquoi Kiba ?
 
 ### Basé sur le vrai code source
 
@@ -219,7 +219,7 @@ python -m src.cli --help   # Afficher l'aide
 ### Axé sur l'utilisateur
 
 - **Configuration en 3 étapes** — Cloner, configurer, exécuter
-- **Configuration interactive** — `clawd login` vous guide
+- **Configuration interactive** — `kiba login` vous guide
 - **REPL riche** — Complétion par tabulation, coloration syntaxique
 - **Persistance des sessions** — Ne perdez jamais votre travail
 
@@ -228,7 +228,7 @@ python -m src.cli --help   # Afficher l'aide
 ## 📦 Structure du projet
 
 ```text
-Clawd-Code/
+Kiba/
 ├── src/
 │   ├── cli.py           # Entrée CLI
 │   ├── config.py        # Configuration
@@ -315,8 +315,8 @@ Licence MIT — Voir [LICENSE](../../LICENSE)
 
 Si vous trouvez cela utile, veuillez **star** ⭐ le repo !
 
-**Fait avec ❤️ par l'équipe Clawd Codex**
+**Fait avec ❤️ par l'équipe Kiba**
 
-[⬆ Retour en haut](#-clawd-codex)
+[⬆ Retour en haut](#-kiba)
 
 </div>

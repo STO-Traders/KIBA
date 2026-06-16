@@ -114,21 +114,21 @@ class SkillTool:
         if not isinstance(payload, dict):
             raise ToolInputError("input must be an object when provided")
 
-        clawd_skills_dir = os.environ.get("CLAWD_SKILLS_DIR")
-        if clawd_skills_dir:
-            skill_dir = Path(clawd_skills_dir).expanduser().resolve()
+        kiba_skills_dir = os.environ.get("KIBA_SKILLS_DIR")
+        if kiba_skills_dir:
+            skill_dir = Path(kiba_skills_dir).expanduser().resolve()
         else:
-            for d in (Path.home() / ".clawd" / "skills", Path.home() / ".claude" / "skills"):
+            for d in (Path.home() / ".kiba" / "skills", Path.home() / ".claude" / "skills"):
                 if d.exists() and d.is_dir():
                     skill_dir = d
                     break
             else:
-                skill_dir = Path.home() / ".clawd" / "skills"
+                skill_dir = Path.home() / ".kiba" / "skills"
         file_path = (skill_dir / f"{name}.py").resolve()
         if not file_path.exists():
             return ToolResult(name="Skill", output={"error": f"skill not found: {name}"}, is_error=True)
 
-        module = _load_module(file_path, module_prefix="clawd_skill_")
+        module = _load_module(file_path, module_prefix="kiba_skill_")
         run_fn = getattr(module, "run", None)
         if not callable(run_fn):
             raise ToolExecutionError(f"skill {name} does not export a callable run(input, context)")

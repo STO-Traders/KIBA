@@ -10,8 +10,8 @@
 
 ***
 
-[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Clawd-Code?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Clawd-Code/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Clawd-Code?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Clawd-Code/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Kiba/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Kiba/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 
@@ -23,23 +23,23 @@
 
 ## 🎯 ما هذا؟
 
-**Clawd Codex** هو **إعادة كتابة كاملة بلغة Python** لـ Claude Code، استنادًا إلى **كود TypeScript الحقيقي**.
+**Kiba** هو **إعادة كتابة كاملة بلغة Python** لـ Claude Code، استنادًا إلى **كود TypeScript الحقيقي**.
 
 ### ⚠️ مهم: هذا ليس مجرد كود مصدر
 
-**على عكس كود TypeScript المُسرّب**، Clawd Codex هو **أداة CLI تعمل بالكامل**:
+**على عكس كود TypeScript المُسرّب**، Kiba هو **أداة CLI تعمل بالكامل**:
 
 <div align="center">
 
 | **Core Features Showcase** |
 |:---:|
-| ![Bash Execution](../../assets/clawd-code-bash.png) |
+| ![Bash Execution](../../assets/kiba-bash.png) |
 | *Real-time Tool Execution* |
 | ![Web Fetch](../../assets/claude-code-webfetch.png) |
 | *Instant Web Content Extraction* |
-| ![File Operations](../../assets/clawd-code-write-read.png) |
+| ![File Operations](../../assets/kiba-write-read.png) |
 | *Seamless Coding & Debugging* |
-| ![Skills (Slash Commands)](../../assets/clawd-code-skill.png) |
+| ![Skills (Slash Commands)](../../assets/kiba-skill.png) |
 | *Flexible Skill Systems* |
 
 **CLI حقيقي • استخدام حقيقي • مجتمع حقيقي**
@@ -59,11 +59,11 @@
 
 ## ⭐ Star History
 
-<a href="https://www.star-history.com/?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=GPT-AGI%2FKiba&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
  </picture>
 </a>
 
@@ -79,7 +79,7 @@ providers = ["Anthropic Claude", "OpenAI GPT", "Zhipu GLM"]  # + سهل التو
 
 ```text
 >>> مرحبًا!
-Assistant: أهلاً! أنا Clawd Codex، إعادة تنفيذ بـ Python...
+Assistant: أهلاً! أنا Kiba، إعادة تنفيذ بـ Python...
 
 >>> /help         # عرض الأوامر
 >>> /             # عرض الأوامر والـ skills
@@ -91,15 +91,15 @@ Assistant: أهلاً! أنا Clawd Codex، إعادة تنفيذ بـ Python...
 
 ### Skills (Slash Commands)
 
-See [README.md](../../README.md#skills-slash-commands) for a quick tutorial on creating skills under `.clawd/skills/<skill-name>/SKILL.md`.
+See [README.md](../../README.md#skills-slash-commands) for a quick tutorial on creating skills under `.kiba/skills/<skill-name>/SKILL.md`.
 
 ### CLI كامل
 
 ```bash
-clawd              # بدء REPL
-clawd login        # تكوين API
-clawd --version    # التحقق من الإصدار
-clawd config       # عرض الإعدادات
+kiba              # بدء REPL
+kiba login        # تكوين API
+kiba --version    # التحقق من الإصدار
+kiba config       # عرض الإعدادات
 ```
 
 ***
@@ -120,8 +120,8 @@ clawd config       # عرض الإعدادات
 ### التثبيت
 
 ```bash
-git clone https://github.com/GPT-AGI/Clawd-Code.git
-cd Clawd-Code
+git clone https://github.com/GPT-AGI/Kiba.git
+cd Kiba
 
 # إنشاء venv (يُوصى بـ uv)
 uv venv --python 3.11
@@ -147,7 +147,7 @@ python -m src.cli login
 4. حفظ نموذج افتراضي اختياريًا
 5. تعيين المزود المحدد كافتراضي
 
-يتم حفظ ملف التكوين في `~/.clawd/config.json`. مثال على الهيكل:
+يتم حفظ ملف التكوين في `~/.kiba/config.json`. مثال على الهيكل:
 
 ```json
 {
@@ -198,11 +198,11 @@ python -m src.cli --help   # عرض المساعدة
 
 ### مثال على الجلسة
 
-![مثال على الجلسة](../../assets/clawd-code-tool-skill-json.png)
+![مثال على الجلسة](../../assets/kiba-tool-skill-json.png)
 
 ***
 
-## 🎓 لماذا Clawd Codex؟
+## 🎓 لماذا Kiba؟
 
 ### استنادًا إلى الكود المصدري الحقيقي
 
@@ -219,7 +219,7 @@ python -m src.cli --help   # عرض المساعدة
 ### يركز على المستخدم
 
 - **إعداد من 3 خطوات** — استنساخ، تكوين، تشغيل
-- **تكوين تفاعلي** — `clawd login` يرشدك
+- **تكوين تفاعلي** — `kiba login` يرشدك
 - **REPL غني** — إكمال Tab، تمييز بناء الجملة
 - **استمرار الجلسة** — لا تفقد عملك أبدًا
 
@@ -228,7 +228,7 @@ python -m src.cli --help   # عرض المساعدة
 ## 📦 هيكل المشروع
 
 ```text
-Clawd-Code/
+Kiba/
 ├── src/
 │   ├── cli.py           # مدخل CLI
 │   ├── config.py        # التكوين
@@ -315,8 +315,8 @@ python -m pytest tests/ -v
 
 إذا وجدت هذا مفيدًا، يرجى **star** ⭐ للمستودع!
 
-**صُنع بـ ❤️ بواسطة فريق Clawd Codex**
+**صُنع بـ ❤️ بواسطة فريق Kiba**
 
-[⬆ العودة للأعلى](#-clawd-codex)
+[⬆ العودة للأعلى](#-kiba)
 
 </div>

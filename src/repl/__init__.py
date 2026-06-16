@@ -1,5 +1,5 @@
-"""REPL module for Clawd Codex."""
+"""REPL module for Kiba."""
 
-from .core import ClawdREPL
+from .core import KibaREPL
 
-__all__ = ["ClawdREPL"]
+__all__ = ["KibaREPL"]

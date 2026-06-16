@@ -1,7 +1,7 @@
-"""Clawd Codex - Claude Code Python Implementation."""
+"""Kiba - Claude Code Python Implementation."""
 
 __version__ = "0.1.0"
-__author__ = "Clawd Codex Team"
+__author__ = "Kiba Team"
 
 from .config import load_config, get_provider_config
 

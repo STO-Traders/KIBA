@@ -10,8 +10,8 @@
 
 ***
 
-[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Clawd-Code?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Clawd-Code/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Clawd-Code?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Clawd-Code/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Kiba/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Kiba/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 
@@ -22,9 +22,9 @@
 
 ***
 
-## 🎯 Why Clawd Code?
+## 🎯 Why Kiba?
 
-**Clawd Code** is a **production-oriented Python rebuild of Claude Code**, ported from the **real TypeScript architecture** and shipped as a **working CLI agent**, not just a source dump.
+**Kiba** is a **production-oriented Python rebuild of Claude Code**, ported from the **real TypeScript architecture** and shipped as a **working CLI agent**, not just a source dump.
 
 - **Real Agent Runtime** — tool-calling loop, streaming REPL, session history, and multi-turn execution
 - **High-Fidelity Port** — keeps the original Claude Code architecture while adapting it to idiomatic Python
@@ -34,11 +34,11 @@
 
 **Token Streaming + Tool-Aware Agent Loop**
 
-![Streaming Agent Experience](assets/clawd-stream.gif)
+![Streaming Agent Experience](assets/kiba-stream.gif)
 
 **Programmable Skill Runtime with Tool Sandboxing**
 
-![Skills (Slash Commands)](assets/clawd-code-skill.png)
+![Skills (Slash Commands)](assets/kiba-skill.png)
 
 **Instant Web Fetch for External Context**
 
@@ -56,11 +56,11 @@
 
 ## ⭐ Star History
 
-<a href="https://www.star-history.com/?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=GPT-AGI%2FKiba&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
  </picture>
 </a>
 
@@ -109,7 +109,7 @@ providers = ["Anthropic Claude", "OpenAI GPT", "Zhipu GLM"]  # + easy to extend
 
 ```text
 >>> Hello!
-Assistant: Hi! I'm Clawd Codex, a Python reimplementation...
+Assistant: Hi! I'm Kiba, a Python reimplementation...
 
 >>> /help         # Show commands
 >>> /             # Show all commands & skills
@@ -122,10 +122,10 @@ Assistant: Hi! I'm Clawd Codex, a Python reimplementation...
 ### Complete CLI
 
 ```bash
-clawd              # Start REPL
-clawd login        # Configure API
-clawd --version    # Check version
-clawd config       # View settings
+kiba              # Start REPL
+kiba login        # Configure API
+kiba --version    # Check version
+kiba config       # View settings
 ```
 
 ***
@@ -143,7 +143,7 @@ clawd config       # View settings
 
 | System | Status | Description |
 |--------|--------|-------------|
-| CLI Entry | ✅ | `clawd`, `login`, `config`, `--version` |
+| CLI Entry | ✅ | `kiba`, `login`, `config`, `--version` |
 | Interactive REPL | ✅ | Rich interactive output, history, tab completion, multiline |
 | Multi-Provider | ✅ | Anthropic, OpenAI, GLM support |
 | Session Persistence | ✅ | Save/load sessions locally |
@@ -182,8 +182,8 @@ clawd config       # View settings
 ### Install
 
 ```bash
-git clone https://github.com/GPT-AGI/Clawd-Code.git
-cd Clawd-Code
+git clone https://github.com/GPT-AGI/Kiba.git
+cd Kiba
 
 # Create venv (uv recommended)
 uv venv --python 3.11
@@ -209,7 +209,7 @@ This flow will:
 4. optionally save a default model
 5. set the selected provider as default
 
-The configuration file is saved in in `~/.clawd/config.json`. Example structure:
+The configuration file is saved in in `~/.kiba/config.json`. Example structure:
 
 ```json
 {
@@ -261,14 +261,14 @@ python -m src.cli --help   # Show help
 
 ### Skills (Slash Commands)
 
-Skills are markdown-based slash commands stored under `.clawd/skills`. Each skill lives in its own directory and must be named `SKILL.md`.
+Skills are markdown-based slash commands stored under `.kiba/skills`. Each skill lives in its own directory and must be named `SKILL.md`.
 
 **1) Create a project skill**
 
 Create:
 
 ```text
-<project-root>/.clawd/skills/<skill-name>/SKILL.md
+<project-root>/.kiba/skills/<skill-name>/SKILL.md
 ```
 
 Example:
@@ -302,7 +302,7 @@ Example:
 
 **Notes**
 
-- User-level skills: `~/.clawd/skills/<skill-name>/SKILL.md`
+- User-level skills: `~/.kiba/skills/<skill-name>/SKILL.md`
 - Tool limits: `allowed-tools` controls which tools the skill can use.
 - Arguments: use `$ARGUMENTS`, `$0`, `$1`, or named args like `$path` (from `arguments`).
 - Placeholder syntax: use `$path`, not `${path}`.
@@ -311,7 +311,7 @@ Example:
 
 ***
 
-## 🎓 Why Clawd Codex?
+## 🎓 Why Kiba?
 
 ### Based on Real Source Code
 
@@ -328,7 +328,7 @@ Example:
 ### User Focused
 
 - **3-step setup** — Clone, configure, run
-- **Interactive config** — `clawd login` guides you
+- **Interactive config** — `kiba login` guides you
 - **Rich REPL** — Tab completion, syntax highlighting
 - **Session persistence** — Never lose your work
 
@@ -337,7 +337,7 @@ Example:
 ## 📦 Project Structure
 
 ```text
-Clawd-Code/
+Kiba/
 ├── src/
 │   ├── cli.py           # CLI entry
 │   ├── providers/       # LLM providers
@@ -345,7 +345,7 @@ Clawd-Code/
 │   ├── skills/          # SKILL.md loading and creation
 │   └── tool_system/     # Tool registry, loop, validation
 ├── tests/               # Core test suite
-├── .clawd/
+├── .kiba/
 │   └── skills/          # Project-local custom skills
 └── FEATURE_LIST.md      # Current feature status
 ```
@@ -415,9 +415,9 @@ MIT License — See [LICENSE](LICENSE)
 
 If you find this useful, please **star** ⭐ the repo!
 
-**Made with ❤️ by Clawd Code Team**
+**Made with ❤️ by Kiba Team**
 
-[⬆ Back to Top](#-clawd-codex)
+[⬆ Back to Top](#-kiba)
 
 </div>
 
@@ -429,7 +429,7 @@ If you find this useful, please **star** ⭐ the repo!
 
 <div align="center">
 
-[English](#-clawd-codex) | **中文** | [Français](docs/i18n/README_FR.md) | [Русский](docs/i18n/README_RU.md) | [हिन्दी](docs/i18n/README_HI.md) | [العربية](docs/i18n/README_AR.md) | [Português](docs/i18n/README_PT.md)
+[English](#-kiba) | **中文** | [Français](docs/i18n/README_FR.md) | [Русский](docs/i18n/README_RU.md) | [हिन्दी](docs/i18n/README_HI.md) | [العربية](docs/i18n/README_AR.md) | [Português](docs/i18n/README_PT.md)
 
 # 🚀 Claude Code Python
 
@@ -439,8 +439,8 @@ If you find this useful, please **star** ⭐ the repo!
 
 ***
 
-[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Clawd-Code?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Clawd-Code/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Clawd-Code?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Clawd-Code/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Kiba/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Kiba/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 
@@ -454,9 +454,9 @@ If you find this useful, please **star** ⭐ the repo!
 
 ***
 
-## 🎯 为什么是 Clawd Code？
+## 🎯 为什么是 Kiba？
 
-**Clawd Code** 是一个面向真实使用的 **Claude Code Python 重构版**：它基于**真实 TypeScript 架构**移植而来，并且交付的是一个**可运行的 CLI Agent**，而不只是源码镜像。
+**Kiba** 是一个面向真实使用的 **Claude Code Python 重构版**：它基于**真实 TypeScript 架构**移植而来，并且交付的是一个**可运行的 CLI Agent**，而不只是源码镜像。
 
 - **真实 Agent Runtime** — 具备工具调用循环、流式 REPL、会话历史与多轮执行能力
 - **高保真移植** — 尽可能保留 Claude Code 的原始架构，同时做符合 Python 风格的实现
@@ -466,11 +466,11 @@ If you find this useful, please **star** ⭐ the repo!
 
 **Token Streaming + Tool-Aware Agent Loop**
 
-![流式 Agent 演示](assets/clawd-stream.gif)
+![流式 Agent 演示](assets/kiba-stream.gif)
 
 **可编程 Skill Runtime 与工具沙箱**
 
-![Skills（斜杠命令）](assets/clawd-code-skill.png)
+![Skills（斜杠命令）](assets/kiba-skill.png)
 
 **Instant Web Fetch for External Context**
 
@@ -488,11 +488,11 @@ If you find this useful, please **star** ⭐ the repo!
 
 ## ⭐ Star 历史
 
-<a href="https://www.star-history.com/?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=GPT-AGI%2FKiba&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
  </picture>
 </a>
 
@@ -541,7 +541,7 @@ providers = ["Anthropic Claude", "OpenAI GPT", "Zhipu GLM"]  # + 易于扩展
 
 ```text
 >>> 你好！
-Assistant: 嗨！我是 Clawd Codex，一个 Python 重实现...
+Assistant: 嗨！我是 Kiba，一个 Python 重实现...
 
 >>> /help         # 显示命令
 >>> /             # 显示命令与技能
@@ -554,10 +554,10 @@ Assistant: 嗨！我是 Clawd Codex，一个 Python 重实现...
 ### 完整的 CLI
 
 ```bash
-clawd              # 启动 REPL
-clawd login        # 配置 API
-clawd --version    # 检查版本
-clawd config       # 查看设置
+kiba              # 启动 REPL
+kiba login        # 配置 API
+kiba --version    # 检查版本
+kiba config       # 查看设置
 ```
 
 ***
@@ -575,7 +575,7 @@ clawd config       # 查看设置
 
 | 系统 | 状态 | 描述 |
 |------|------|------|
-| CLI 入口 | ✅ | `clawd`、`login`、`config`、`--version` |
+| CLI 入口 | ✅ | `kiba`、`login`、`config`、`--version` |
 | 交互式 REPL | ✅ | 丰富的交互输出、历史记录、Tab 补全、多行输入 |
 | 多提供商支持 | ✅ | 支持 Anthropic、OpenAI、GLM |
 | 会话持久化 | ✅ | 本地保存/加载会话 |
@@ -614,8 +614,8 @@ clawd config       # 查看设置
 ### 安装
 
 ```bash
-git clone https://github.com/GPT-AGI/Clawd-Code.git
-cd Clawd-Code
+git clone https://github.com/GPT-AGI/Kiba.git
+cd Kiba
 
 # 创建虚拟环境（推荐使用 uv）
 uv venv --python 3.11
@@ -641,7 +641,7 @@ python -m src.cli login
 4. 可选：保存默认 model
 5. 将该 provider 设为默认
 
-配置文件会保存在 `~/.clawd/config.json`。示例结构：
+配置文件会保存在 `~/.kiba/config.json`。示例结构：
 
 ```json
 {
@@ -693,14 +693,14 @@ python -m src.cli --help   # 显示帮助
 
 ### Skills（技能 / 斜杠命令）教程
 
-技能是存放在 `.clawd/skills` 下的 Markdown 斜杠命令。每个技能对应一个目录，并且文件名固定为 `SKILL.md`。
+技能是存放在 `.kiba/skills` 下的 Markdown 斜杠命令。每个技能对应一个目录，并且文件名固定为 `SKILL.md`。
 
 **1）创建项目技能**
 
 创建：
 
 ```text
-<project-root>/.clawd/skills/<skill-name>/SKILL.md
+<project-root>/.kiba/skills/<skill-name>/SKILL.md
 ```
 
 示例：
@@ -734,7 +734,7 @@ arguments: [path]
 
 **补充说明**
 
-- 用户级技能：`~/.clawd/skills/<skill-name>/SKILL.md`
+- 用户级技能：`~/.kiba/skills/<skill-name>/SKILL.md`
 - 工具限制：`allowed-tools` 用于限制技能允许调用的工具集合
 - 参数替换：支持 `$ARGUMENTS`、`$0`、`$1`、以及命名参数（例如 `$path`，来自 `arguments`）
 - 占位符写法：请使用 `$path`，不要写成 `${path}`
@@ -742,7 +742,7 @@ arguments: [path]
 
 ***
 
-## 🎓 为什么选择 Clawd Codex？
+## 🎓 为什么选择 Kiba？
 
 ### 基于真实源码
 
@@ -759,7 +759,7 @@ arguments: [path]
 ### 以用户为中心
 
 - **3 步设置** — 克隆、配置、运行
-- **交互式配置** — `clawd login` 引导你完成设置
+- **交互式配置** — `kiba login` 引导你完成设置
 - **丰富的 REPL** — Tab 补全、语法高亮
 - **会话持久化** — 永不丢失你的工作
 
@@ -768,7 +768,7 @@ arguments: [path]
 ## 📦 项目结构
 
 ```text
-Clawd-Code/
+Kiba/
 ├── src/
 │   ├── cli.py           # CLI 入口
 │   ├── providers/       # LLM 提供商
@@ -776,7 +776,7 @@ Clawd-Code/
 │   ├── skills/          # SKILL.md 加载与创建
 │   └── tool_system/     # 工具注册、循环与校验
 ├── tests/               # 核心测试套件
-├── .clawd/
+├── .kiba/
 │   └── skills/          # 项目级自定义技能
 └── FEATURE_LIST.md      # 当前功能状态
 ```
@@ -845,7 +845,7 @@ MIT 许可证 — 查看 [LICENSE](LICENSE)
 
 如果你觉得这个项目有用，请给个 **star** ⭐！
 
-**用 ❤️ 制作 by Clawd Code 团队**
+**用 ❤️ 制作 by Kiba 团队**
 
 [⬆ 回到顶部](#中文版)
 

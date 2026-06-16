@@ -1,5 +1,5 @@
 """
-Command system for Clawd Code.
+Command system for Kiba.
 
 A complete reimplementation of Claude Code's command system.
 """

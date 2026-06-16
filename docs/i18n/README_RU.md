@@ -10,8 +10,8 @@
 
 ***
 
-[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Clawd-Code?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Clawd-Code/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Clawd-Code?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Clawd-Code/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Kiba/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Kiba/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 
@@ -23,23 +23,23 @@
 
 ## 🎯 Что это?
 
-**Clawd Codex** — это **полная переработка на Python** Claude Code, основанная на **реальном исходном коде TypeScript**.
+**Kiba** — это **полная переработка на Python** Claude Code, основанная на **реальном исходном коде TypeScript**.
 
 ### ⚠️ Важно: Это НЕ просто исходный код
 
-**В отличие от утечки исходного кода TypeScript**, Clawd Codex — это **полностью функциональный инструмент CLI**:
+**В отличие от утечки исходного кода TypeScript**, Kiba — это **полностью функциональный инструмент CLI**:
 
 <div align="center">
 
 | **Core Features Showcase** |
 |:---:|
-| ![Bash Execution](../../assets/clawd-code-bash.png) |
+| ![Bash Execution](../../assets/kiba-bash.png) |
 | *Real-time Tool Execution* |
 | ![Web Fetch](../../assets/claude-code-webfetch.png) |
 | *Instant Web Content Extraction* |
-| ![File Operations](../../assets/clawd-code-write-read.png) |
+| ![File Operations](../../assets/kiba-write-read.png) |
 | *Seamless Coding & Debugging* |
-| ![Skills (Slash Commands)](../../assets/clawd-code-skill.png) |
+| ![Skills (Slash Commands)](../../assets/kiba-skill.png) |
 | *Flexible Skill Systems* |
 
 **Реальный CLI • Реальное использование • Реальное сообщество**
@@ -59,11 +59,11 @@
 
 ## ⭐ Star History
 
-<a href="https://www.star-history.com/?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=GPT-AGI%2FKiba&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FClawd-Code&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
  </picture>
 </a>
 
@@ -79,7 +79,7 @@ providers = ["Anthropic Claude", "OpenAI GPT", "Zhipu GLM"]  # + легко ра
 
 ```text
 >>> Привет!
-Assistant: Привет! Я Clawd Codex, повторная реализация на Python...
+Assistant: Привет! Я Kiba, повторная реализация на Python...
 
 >>> /help         # Показать команды
 >>> /             # Показать команды и skills
@@ -91,15 +91,15 @@ Assistant: Привет! Я Clawd Codex, повторная реализация
 
 ### Skills (Slash Commands)
 
-See [README.md](../../README.md#skills-slash-commands) for a quick tutorial on creating skills under `.clawd/skills/<skill-name>/SKILL.md`.
+See [README.md](../../README.md#skills-slash-commands) for a quick tutorial on creating skills under `.kiba/skills/<skill-name>/SKILL.md`.
 
 ### Полный CLI
 
 ```bash
-clawd              # Запустить REPL
-clawd login        # Настроить API
-clawd --version    # Проверить версию
-clawd config       # Просмотреть настройки
+kiba              # Запустить REPL
+kiba login        # Настроить API
+kiba --version    # Проверить версию
+kiba config       # Просмотреть настройки
 ```
 
 ***
@@ -120,8 +120,8 @@ clawd config       # Просмотреть настройки
 ### Установка
 
 ```bash
-git clone https://github.com/GPT-AGI/Clawd-Code.git
-cd Clawd-Code
+git clone https://github.com/GPT-AGI/Kiba.git
+cd Kiba
 
 # Создать venv (рекомендуется uv)
 uv venv --python 3.11
@@ -147,7 +147,7 @@ python -m src.cli login
 4. при необходимости сохранит модель по умолчанию
 5. установит выбранный провайдер как провайдера по умолчанию
 
-Файл конфигурации сохраняется в `~/.clawd/config.json`. Пример структуры:
+Файл конфигурации сохраняется в `~/.kiba/config.json`. Пример структуры:
 
 ```json
 {
@@ -198,11 +198,11 @@ python -m src.cli --help   # Показать справку
 
 ### Пример сессии
 
-![Пример сессии](../../assets/clawd-code-tool-skill-json.png)
+![Пример сессии](../../assets/kiba-tool-skill-json.png)
 
 ***
 
-## 🎓 Почему Clawd Codex?
+## 🎓 Почему Kiba?
 
 ### Основан на реальном исходном коде
 
@@ -219,7 +219,7 @@ python -m src.cli --help   # Показать справку
 ### Нацелен на пользователя
 
 - **3-шаговая настройка** — Клонировать, настроить, запустить
-- **Интерактивная настройка** — `clawd login` направляет вас
+- **Интерактивная настройка** — `kiba login` направляет вас
 - **Богатый REPL** — Автозаполнение табуляцией, подсветка синтаксиса
 - **Сохранение сессий** — Никогда не теряйте свою работу
 
@@ -228,7 +228,7 @@ python -m src.cli --help   # Показать справку
 ## 📦 Структура проекта
 
 ```text
-Clawd-Code/
+Kiba/
 ├── src/
 │   ├── cli.py           # Точка входа CLI
 │   ├── config.py        # Конфигурация
@@ -315,8 +315,8 @@ MIT Лицензия — См. [LICENSE](../../LICENSE)
 
 Если вы нашли это полезным, пожалуйста, **star** ⭐ репозиторий!
 
-**Сделано с ❤️ командой Clawd Codex**
+**Сделано с ❤️ командой Kiba**
 
-[⬆ Наверх](#-clawd-codex)
+[⬆ Наверх](#-kiba)
 
 </div>

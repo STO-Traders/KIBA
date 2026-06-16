@@ -4,7 +4,7 @@
 
 ```bash
 # 进入项目目录
-cd /root/Clawd-Codex
+cd /root/Kiba
 
 # 激活虚拟环境
 source .venv/bin/activate
@@ -87,7 +87,7 @@ python -c "from dotenv import load_dotenv; import os; load_dotenv(); print(os.ge
 配置完成后，我会：
 1. 创建 `requirements.txt` 和 `setup.py`
 2. 安装依赖：`uv pip install -e .`
-3. 创建配置文件：`~/.clawd/config.json`
+3. 创建配置文件：`~/.kiba/config.json`
 4. 测试 GLM API 连接
 
 ---
