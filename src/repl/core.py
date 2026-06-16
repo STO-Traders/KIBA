@@ -1404,7 +1404,7 @@ class KibaREPL:
         self.console.print()
         return True
 
-    def execute(self, prompt: str, max_turns: int = 30):
+    def execute(self, prompt: str, max_turns: int = 30, images=None):
         """Run one agent turn and RETURN the AgentLoopResult (no printing/rendering).
 
         Shared by the SDK and headless mode. Fires UserPromptSubmit/Stop hooks and saves
@@ -1417,7 +1417,10 @@ class KibaREPL:
                 raise RuntimeError(up.message_text or "blocked by UserPromptSubmit hook")
             if up.context_text:
                 prompt = f"{prompt}\n\n{up.context_text}"
-        self.session.conversation.add_user_message(prompt)
+        if images:
+            self.session.conversation.add_user_message_with_images(prompt, images)
+        else:
+            self.session.conversation.add_user_message(prompt)
         result = run_agent_loop(
             conversation=self.session.conversation,
             provider=self.provider,
@@ -1434,7 +1437,7 @@ class KibaREPL:
             hr.run("Stop", {"response": result.response_text})
         return result
 
-    def run_headless(self, prompt: str, output_format: str = "text", max_turns: int = 30) -> int:
+    def run_headless(self, prompt: str, output_format: str = "text", max_turns: int = 30, images=None) -> int:
         """Run a single prompt non-interactively, print the result, and return an exit code.
 
         Powers `kiba -p '...'` and piped stdin. Keeps stdout clean — plain text, or a
@@ -1451,7 +1454,10 @@ class KibaREPL:
                 return 1
             if up.context_text:
                 prompt = f"{prompt}\n\n{up.context_text}"
-        self.session.conversation.add_user_message(prompt)
+        if images:
+            self.session.conversation.add_user_message_with_images(prompt, images)
+        else:
+            self.session.conversation.add_user_message(prompt)
         try:
             result = run_agent_loop(
                 conversation=self.session.conversation,

@@ -54,9 +54,9 @@ class KibaAgent:
             quiet=True,
         )
 
-    def ask(self, prompt: str, max_turns: int = 30) -> str:
-        """Run one turn and return the final assistant text."""
-        return self._repl.execute(prompt, max_turns=max_turns).response_text or ""
+    def ask(self, prompt: str, max_turns: int = 30, images=None) -> str:
+        """Run one turn and return the final assistant text. `images`: paths/URLs for vision."""
+        return self._repl.execute(prompt, max_turns=max_turns, images=images).response_text or ""
 
     def ask_json(self, prompt: str, max_turns: int = 30) -> dict:
         """Run one turn and return {result, num_turns, usage, session_id}."""
@@ -81,9 +81,9 @@ class KibaAgent:
         return self._repl.session.conversation
 
 
-def query(prompt: str, *, max_turns: int = 30, **kwargs) -> str:
-    """One-shot: run KIBA on a prompt and return the final text."""
-    return KibaAgent(**kwargs).ask(prompt, max_turns=max_turns)
+def query(prompt: str, *, max_turns: int = 30, images=None, **kwargs) -> str:
+    """One-shot: run KIBA on a prompt and return the final text. `images`: paths/URLs."""
+    return KibaAgent(**kwargs).ask(prompt, max_turns=max_turns, images=images)
 
 
 def query_json(prompt: str, *, max_turns: int = 30, **kwargs) -> dict:

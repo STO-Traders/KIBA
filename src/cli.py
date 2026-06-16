@@ -86,6 +86,10 @@ Examples:
         '--max-turns', type=int, default=30,
         help='Max tool-call turns in headless mode (default: 30)'
     )
+    parser.add_argument(
+        '--image', action='append', default=None, metavar='PATH',
+        help='Attach an image (file path or URL) to the headless prompt; repeatable'
+    )
 
     args, extra = parser.parse_known_args()
 
@@ -126,6 +130,7 @@ Examples:
             resume=args.resume,
             stream=args.stream,
             max_turns=args.max_turns,
+            images=args.image,
         )
 
     # Default: start interactive REPL
@@ -471,7 +476,7 @@ def _resolve_session(continue_session: bool = False, resume: str | None = None):
 
 
 def run_headless_cli(prompt, output_format="text", continue_session=False,
-                     resume=None, stream=False, max_turns=30):
+                     resume=None, stream=False, max_turns=30, images=None):
     """Run a single prompt non-interactively and print the result (powers `kiba -p`)."""
     from src.config import get_default_provider
     from src.repl import KibaREPL
@@ -479,7 +484,7 @@ def run_headless_cli(prompt, output_format="text", continue_session=False,
     provider = get_default_provider()
     session = _resolve_session(continue_session, resume)
     repl = KibaREPL(provider_name=provider, stream=stream, quiet=True, session=session)
-    return repl.run_headless(prompt, output_format=output_format, max_turns=max_turns)
+    return repl.run_headless(prompt, output_format=output_format, max_turns=max_turns, images=images)
 
 
 def start_repl(stream: bool = False, continue_session: bool = False, resume: str | None = None):

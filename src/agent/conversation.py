@@ -33,7 +33,29 @@ class ToolResultContentBlock:
     is_error: bool = False
 
 
-ContentBlock = Union[TextContentBlock, ToolUseContentBlock, ToolResultContentBlock]
+@dataclass
+class ImageContentBlock:
+    """An image content block (vision input)."""
+    type: str = "image"
+    source: dict[str, Any] = field(default_factory=dict)
+
+
+ContentBlock = Union[TextContentBlock, ToolUseContentBlock, ToolResultContentBlock, ImageContentBlock]
+
+
+def image_block_from_path(path: str) -> ImageContentBlock:
+    """Build an image content block from a local file (base64-encoded) or an http(s) URL."""
+    import base64 as _b64
+    from pathlib import Path as _Path
+    s = str(path).strip()
+    if s.startswith(("http://", "https://")):
+        return ImageContentBlock(source={"type": "url", "url": s})
+    p = _Path(s).expanduser()
+    ext = p.suffix.lower().lstrip(".")
+    media = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+             "gif": "image/gif", "webp": "image/webp"}.get(ext, "image/png")
+    data = _b64.b64encode(p.read_bytes()).decode()
+    return ImageContentBlock(source={"type": "base64", "media_type": media, "data": data})
 
 
 @dataclass
@@ -62,6 +84,17 @@ class Conversation:
     def add_user_message(self, text: str):
         """Add a plain user text message."""
         self.add_message("user", text)
+
+    def add_user_message_with_images(self, text: str, image_paths: list[str]):
+        """Add a user message with text plus one or more images (file paths or URLs)."""
+        blocks: list[ContentBlock] = []
+        for ip in image_paths or []:
+            try:
+                blocks.append(image_block_from_path(ip))
+            except Exception:
+                pass
+        blocks.append(TextContentBlock(text=text))
+        self.add_message("user", blocks)
 
     def add_assistant_message(self, content: Union[str, list[ContentBlock]]):
         """Add an assistant message (text or tool use)."""
@@ -114,6 +147,8 @@ class Conversation:
                             "content": rc,
                             "is_error": block.is_error
                         })
+                    elif isinstance(block, ImageContentBlock):
+                        content_blocks.append({"type": "image", "source": block.source})
                 api_messages.append({"role": msg.role, "content": content_blocks})
         return api_messages
 
@@ -146,6 +181,8 @@ class Conversation:
                             "content": block.content,
                             "is_error": block.is_error
                         })
+                    elif isinstance(block, ImageContentBlock):
+                        content_data.append({"type": "image", "source": block.source})
             messages_data.append({
                 "role": msg.role,
                 "content": content_data,
