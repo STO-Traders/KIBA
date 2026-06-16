@@ -82,6 +82,9 @@ KIBA_STATUS_WORDS = [
     "Whittling", "Zigzagging", "Moonwalking", "Canoodling", "Fiddle-faddling",
     "Reticulating", "Philosophising", "Crunching", "Forging", "Untangling",
     "Loping", "Skulking", "Bristling", "Tracking", "Scampering", "Rummaging",
+    "Stalking", "Lurking", "Baying", "Growling", "Circling", "Slinking",
+    "Ambushing", "Hackling", "Yipping", "Padding", "Scent-marking",
+    "Moon-gazing", "Den-digging", "Pack-rallying", "Lone-wolfing", "Nosing",
 ]
 
 from src.agent import Session
