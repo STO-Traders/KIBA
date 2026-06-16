@@ -115,6 +115,18 @@ KIBA_STATUS_WORDS = [
     "Shitstorming", "Dumpster-firing", "Tomfuckery", "Asshattery",
     "Fucknuggeting", "Cussing-a-blue-streak", "Damn-it-all-ing",
     "Son-of-a-bitching", "Raising-hell", "Shit-the-bedding",
+    # feral wolf / beast-rage
+    "Gnashing", "Gnawing", "Ripping", "Tearing", "Shredding", "Mauling",
+    "Savaging", "Devouring", "Feasting", "Bloodletting", "Throat-ripping",
+    "Carcass-dragging", "Bone-cracking", "Marrow-sucking", "Sinew-snapping",
+    "Fang-baring", "Jaw-snapping", "Hackle-raising", "Blood-scenting",
+    "Kill-stalking", "Neck-snapping", "Pelt-shaking", "Carrion-circling",
+    "Wound-licking", "Rage-foaming", "Rabid-frothing", "Hellhound-baying",
+    "Moon-screaming", "Pack-howling", "Alpha-asserting", "Territory-marking",
+    "Intruder-snarling", "Predator-creeping", "Ambush-coiling", "Death-rolling",
+    "Frenzy-feeding", "Berserk-charging", "Feral-lunging", "Wild-thrashing",
+    "Beast-moding", "Primal-screaming", "Hunger-pacing", "Rabid-snapping",
+    "Blood-howling", "Snout-snarling", "Claw-sharpening", "Hunt-circling",
 ]
 
 from src.agent import Session
