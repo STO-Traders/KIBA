@@ -584,15 +584,19 @@ class KibaREPL:
         ])
 
         sprite_grid = [
-            "...kkkkkkkk...",
-            ".ssssssssssss.",
-            ".ssssssssssss.",
-            ".sskksssskkss.",
-            ".sskksssskkss.",
-            ".sssssWWsssss.",
-            "ssssssssssssss",
-            "ssssssssssssss",
-            ".ss.ss..ss.ss.",
+            "...kkkkkkkk.....",
+            ".ssssssssssss...",
+            ".ssssssssssss...",
+            ".sskksssskkss...",
+            ".sskksssskkss...",
+            ".ssssssssssss.ss",
+            ".sssssWWsssss.ss",
+            "ssssssssssss.sss",
+            "ssssssssssssssss",
+            "ssssssssssssss..",
+            "ssssssssssssss..",
+            ".ss.ss..ss.ss...",
+            ".ss.ss..ss.ss...",
         ]
         sprite_colors = {"k": "black", "s": "#cd8b8b", "W": "white"}
         mascot_ascii = "\n".join(sprite_grid)
