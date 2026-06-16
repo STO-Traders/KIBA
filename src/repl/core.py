@@ -85,6 +85,25 @@ KIBA_STATUS_WORDS = [
     "Stalking", "Lurking", "Baying", "Growling", "Circling", "Slinking",
     "Ambushing", "Hackling", "Yipping", "Padding", "Scent-marking",
     "Moon-gazing", "Den-digging", "Pack-rallying", "Lone-wolfing", "Nosing",
+    # unhinged-developer energy (snarky / absurd / mildly profane, SFW)
+    "Shitposting", "Doomscrolling", "Rage-quitting", "Crashing-out",
+    "Touching-grass", "Malding", "Coping", "Seething", "Yeeting",
+    "Vibe-checking", "Gaslighting", "Gatekeeping", "Girlbossing", "Menacing",
+    "Plotting", "Sabotaging", "Procrastinating", "Overthinking", "Spiraling",
+    "Catastrophizing", "Trauma-dumping", "Oversharing", "Cringing",
+    "Facepalming", "Headdesking", "Eye-rolling", "Side-eyeing", "Ghosting",
+    "Catfishing", "Negging", "Simping", "Stanning", "Trolling", "Flexing",
+    "Capping", "Glazing", "Yapping", "Goblin-moding", "Gremlin-moding",
+    "Feral-screaming", "Dissociating", "Hyperfixating", "Panic-installing",
+    "Stack-overflowing", "Rubber-ducking", "Bikeshedding", "Yak-shaving",
+    "Spaghetti-coding", "Duct-taping", "Hotfixing", "Force-pushing",
+    "Merge-conflicting", "Winging-it", "Vibe-coding", "Hallucinating",
+    "Improvising", "Flailing", "Caffeinating", "Snack-hunting", "Rage-baiting",
+    "Clickbaiting", "Sub-tweeting", "Side-questing", "Min-maxing",
+    "Speed-running", "Alt-tabbing", "Conspiracy-theorizing", "Tinfoil-hatting",
+    "Manifesting", "Lollygagging", "Shenaniganing", "Tomfoolering",
+    "Skullduggering", "Malarkeying", "Balderdashing", "Doom-prepping",
+    "Goblin-snacking", "Sweating-profusely", "Bluffing",
 ]
 
 from src.agent import Session
