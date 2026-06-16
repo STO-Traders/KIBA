@@ -31,6 +31,16 @@ Write-Host "Kiba installed." -ForegroundColor Green
 
 $KibaBin = Join-Path $ScriptDir ".venv\Scripts\kiba.exe"
 
+# 3b) put `kiba` on PATH so it works from ANY new terminal (not just an activated venv)
+$ScriptsDir = Join-Path $ScriptDir ".venv\Scripts"
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($null -eq $userPath) { $userPath = "" }
+if ($userPath -notlike "*$ScriptsDir*") {
+    [Environment]::SetEnvironmentVariable("Path", ($userPath.TrimEnd(';') + ";" + $ScriptsDir), "User")
+    Write-Host "Added 'kiba' to your PATH (open a NEW terminal to use it anywhere)." -ForegroundColor Green
+}
+$env:Path = "$ScriptsDir;$env:Path"  # also works immediately in this window
+
 # 4) setup wizard
 Write-Host "`nLaunching the setup wizard ..." -ForegroundColor Cyan
 & $KibaBin setup
@@ -38,9 +48,7 @@ Write-Host "`nLaunching the setup wizard ..." -ForegroundColor Cyan
 # 5) summary
 Write-Host "`nKiba is ready!" -ForegroundColor Green
 Write-Host ""
-Write-Host "Start Kiba any time with:"
-Write-Host "  cd `"$ScriptDir`""
-Write-Host "  .venv\Scripts\activate"
+Write-Host "Start Kiba in a NEW terminal (kiba is now on your PATH):"
 Write-Host "  kiba --stream"
 Write-Host ""
 Write-Host "Re-run setup later with:  kiba setup"

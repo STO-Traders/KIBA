@@ -39,6 +39,11 @@ green "Kiba installed."
 
 KIBA_BIN="$SCRIPT_DIR/.venv/bin/kiba"
 
+# 3b) put `kiba` on PATH so it works from ANY shell (~/.local/bin is already on PATH via uv)
+mkdir -p "$HOME/.local/bin"
+ln -sf "$KIBA_BIN" "$HOME/.local/bin/kiba"
+green "Linked 'kiba' into ~/.local/bin (works from any new shell)."
+
 # 4) run the guided setup wizard if we're in an interactive terminal
 if [ -t 0 ] && [ -t 1 ]; then
   echo
@@ -53,13 +58,11 @@ green "
 ✅  Kiba is ready!"
 cat <<EOF
 
-Start Kiba any time with:
-  cd "$SCRIPT_DIR"
-  source .venv/bin/activate
+Start Kiba in a new terminal (kiba is now on your PATH):
   kiba --stream
 
-Optional — type 'kiba' from anywhere (adds a shell alias):
-  echo 'alias kiba="$KIBA_BIN"' >> ~/.zshrc && source ~/.zshrc
+If your shell can't find it yet, open a new terminal, or run directly:
+  "$KIBA_BIN" --stream
 
 Re-run setup later with:  kiba setup
 EOF
