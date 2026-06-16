@@ -7,14 +7,27 @@ You do **not** need Python, Homebrew, or any setup beforehand — the installer 
 
 ---
 
-## Fastest: one-line install (macOS / Linux)
+## Fastest: one-line install
+
+**macOS / Linux** — paste into **Terminal**:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/STO-Traders/KIBA/main/bootstrap.sh | bash
 ```
 
-This clones Kiba and installs everything. Because nothing is "downloaded and opened,"
-it **skips the macOS Gatekeeper warning** entirely.
+**Windows** — paste into **PowerShell** (not Command Prompt):
+
+```powershell
+irm https://raw.githubusercontent.com/STO-Traders/KIBA/main/bootstrap.ps1 | iex
+```
+
+Both clone Kiba and install everything (Python, deps, the `kiba` command), then launch
+the setup wizard. On macOS, because nothing is "downloaded and opened," the one-liner
+**skips the Gatekeeper warning** entirely. On Windows it needs `git` — if it says git is
+missing, run `winget install --id Git.Git -e` first, then re-run the command.
+
+> ⚠️ The bash one-liner is **macOS/Linux only** — do **not** paste it into Windows
+> PowerShell (you'll get `fi`/`exec`/`$DEST` errors). Use the PowerShell one-liner above.
 
 ---
 
