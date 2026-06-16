@@ -28,6 +28,7 @@ class ToolContext:
     team: dict[str, Any] | None = None
     output_style_name: str | None = None
     output_style_dir: Path | None = None
+    hook_runner: Any = None  # src.hooks.runner.HookRunner — fires lifecycle hooks
 
     # Permission handler callback: called when a tool needs user consent.
     # Signature: (tool_name: str, message: str, suggestion: str | None)

@@ -121,7 +121,32 @@ class ToolRegistry:
                     tool_use_id=call.tool_use_id,
                 )
 
+        # PreToolUse hooks — may block the tool before it runs
+        hook_runner = getattr(context, "hook_runner", None)
+        if hook_runner is not None and hook_runner.has("PreToolUse"):
+            pre = hook_runner.run("PreToolUse", {"tool_input": call.input}, tool_name=spec.name)
+            if pre.blocked:
+                detail = f": {pre.message_text}" if pre.message_text else ""
+                return ToolResult(
+                    name=spec.name,
+                    output={"error": f"blocked by PreToolUse hook{detail}"},
+                    is_error=True,
+                    tool_use_id=call.tool_use_id,
+                )
+
         result = tool.run(call.input, context)
+
+        # PostToolUse hooks — observe (non-blocking)
+        if hook_runner is not None and hook_runner.has("PostToolUse"):
+            try:
+                hook_runner.run(
+                    "PostToolUse",
+                    {"tool_input": call.input, "tool_response": result.output},
+                    tool_name=spec.name,
+                )
+            except Exception:
+                pass
+
         if result.tool_use_id is None and call.tool_use_id is not None:
             return ToolResult(
                 name=result.name,

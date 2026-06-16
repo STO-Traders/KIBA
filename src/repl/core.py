@@ -239,6 +239,14 @@ class KibaREPL:
         self.quiet = quiet
         self.multiline_mode = False
 
+        # Layered settings.json (permissions, env, model, hooks). Apply env FIRST so it can
+        # set KIBA_AUTO_APPROVE / KIBA_TRUSTED_DIRS / KIBA_OUTPUT_STYLE before we read them.
+        from src.settings import load_settings, apply_env, get_permissions
+        self.settings = load_settings()
+        apply_env(self.settings)
+        self._settings_perms = get_permissions(self.settings)
+        self._mode = (self._settings_perms.get("defaultMode") or "").strip()
+
         # Load configuration
         config = get_provider_config(provider_name)
         if not config.get("api_key"):
@@ -251,7 +259,7 @@ class KibaREPL:
         self.provider = provider_class(
             api_key=config["api_key"],
             base_url=config.get("base_url"),
-            model=config.get("default_model")
+            model=self.settings.get("model") or config.get("default_model"),
         )
 
         # Create a fresh session, or reuse one passed in (--continue / --resume)
@@ -268,12 +276,18 @@ class KibaREPL:
         #   KIBA_TRUSTED_DIRS=a:b:c  -> extra dirs the agent may read/write (os.pathsep-separated)
         #   KIBA_OUTPUT_STYLE=name   -> persona/output style from ~/.kiba/output-styles/<name>.md
         self._auto_approve = os.environ.get("KIBA_AUTO_APPROVE", "").strip().lower() in ("1", "true", "yes", "on")
+        # settings.json permissions.defaultMode can also drive autonomy:
+        #   bypassPermissions -> auto-approve everything   ·   plan -> planning posture
+        if self._mode == "bypassPermissions":
+            self._auto_approve = True
         trusted_dirs = [d for d in os.environ.get("KIBA_TRUSTED_DIRS", "").split(os.pathsep) if d.strip()]
+        deny_tools = self._settings_perms.get("deny") or []
 
-        if trusted_dirs:
+        if trusted_dirs or deny_tools:
             perm_ctx = ToolPermissionContext.from_iterables(
+                deny_tools or None,
                 workspace_root=Path.cwd(),
-                additional_working_directories=trusted_dirs,
+                additional_working_directories=trusted_dirs or None,
                 allow_docs=self._auto_approve,
             )
             self.tool_context = ToolContext(workspace_root=Path.cwd(), permission_context=perm_ctx)
@@ -281,6 +295,11 @@ class KibaREPL:
             self.tool_context = ToolContext(workspace_root=Path.cwd())
 
         self.tool_context.ask_user = self._ask_user_questions
+
+        # Lifecycle hooks (settings.json "hooks") — fire on tool use, prompts, session events
+        from src.hooks.runner import HookRunner
+        self.hook_runner = HookRunner(self.settings, cwd=Path.cwd())
+        self.tool_context.hook_runner = self.hook_runner
 
         # Permission handler with status control for proper input handling
         self._current_status = None
@@ -291,8 +310,13 @@ class KibaREPL:
                     "[dim yellow]⚡ Autonomous mode on — tool actions auto-approved "
                     "(dangerous-command blocklist still active).[/dim yellow]"
                 )
+        elif self._mode == "acceptEdits":
+            self.tool_context.permission_handler = self._accept_edits_permission
         else:
             self.tool_context.permission_handler = self._handle_permission_request
+
+        if self._mode == "plan":
+            self.tool_context.plan_mode = True
 
         # Persona / output style (falls back to the built-in 'default' if unset or missing)
         style_env = os.environ.get("KIBA_OUTPUT_STYLE", "").strip()
@@ -440,6 +464,17 @@ class KibaREPL:
         are enforced elsewhere and still apply.
         """
         return (True, False)
+
+    def _accept_edits_permission(
+        self,
+        tool_name: str,
+        message: str,
+        suggestion: str | None,
+    ) -> tuple[bool, bool]:
+        """acceptEdits mode: auto-approve file writes/edits, prompt for everything else."""
+        if str(tool_name) in ("Write", "Edit", "NotebookEdit"):
+            return (True, False)
+        return self._handle_permission_request(tool_name, message, suggestion)
 
     def _handle_permission_request(
         self,
@@ -1354,6 +1389,16 @@ class KibaREPL:
         JSON envelope with --output-format json — so KIBA can be scripted, cron'd, driven
         by the watchdog, or embedded via the SDK. Tool/streaming chrome is suppressed.
         """
+        hr = getattr(self, "hook_runner", None)
+        if hr is not None and hr.has("SessionStart"):
+            hr.run("SessionStart", {"source": "headless"})
+        if hr is not None and hr.has("UserPromptSubmit"):
+            up = hr.run("UserPromptSubmit", {"prompt": prompt})
+            if up.blocked:
+                print(up.message_text or "blocked by UserPromptSubmit hook", file=sys.stderr)
+                return 1
+            if up.context_text:
+                prompt = f"{prompt}\n\n{up.context_text}"
         self.session.conversation.add_user_message(prompt)
         try:
             result = run_agent_loop(
@@ -1375,6 +1420,10 @@ class KibaREPL:
             pass
 
         text = result.response_text or ""
+        if hr is not None and hr.has("Stop"):
+            hr.run("Stop", {"response": text})
+        if hr is not None and hr.has("SessionEnd"):
+            hr.run("SessionEnd", {"reason": "headless_complete"})
         if output_format == "json":
             usage = result.usage or {}
             print(json.dumps({
@@ -1399,6 +1448,16 @@ class KibaREPL:
             user_input: The user message to send.
             max_turns: Maximum number of tool call turns (default 20, higher for complex commands).
         """
+        # UserPromptSubmit hooks — may block the prompt or inject extra context
+        hr = getattr(self, "hook_runner", None)
+        if hr is not None and hr.has("UserPromptSubmit"):
+            up = hr.run("UserPromptSubmit", {"prompt": user_input})
+            if up.blocked:
+                self.console.print(f"[red]⛔ {up.message_text or 'Prompt blocked by hook'}[/red]")
+                return
+            if up.context_text:
+                user_input = f"{user_input}\n\n{up.context_text}"
+
         # Add user message
         self.session.conversation.add_user_message(user_input)
 
@@ -1495,6 +1554,9 @@ class KibaREPL:
             else:
                 self.console.print(Markdown(result.response_text))
                 self.console.print("\n")
+
+            if hr is not None and hr.has("Stop"):
+                hr.run("Stop", {"response": result.response_text})
 
         except Exception as e:
             error_str = str(e)
