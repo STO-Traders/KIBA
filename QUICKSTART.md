@@ -7,13 +7,25 @@ You do **not** need Python, Homebrew, or any setup beforehand — the installer 
 
 ---
 
-## Install
+## Fastest: one-line install (macOS / Linux)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/STO-Traders/Kiba/main/bootstrap.sh | bash
+```
+
+This clones Kiba and installs everything. Because nothing is "downloaded and opened,"
+it **skips the macOS Gatekeeper warning** entirely.
+
+---
+
+## Install from the zip
 
 ### macOS
 1. Unzip `Kiba.zip`.
 2. Double-click **`Install Kiba (Mac).command`**.
-   - First time, macOS may say it's from an unidentified developer: right-click → **Open** → **Open**.
-   - Or in Terminal: `cd` into the folder and run `bash install.sh`.
+   - First time, macOS may say it's from an unidentified developer: **right-click → Open → Open**.
+   - Still blocked? Clear the quarantine flag: `xattr -dr com.apple.quarantine "/path/to/Kiba"`
+   - Or just use the one-line installer above (no warning), or run `bash install.sh` in Terminal.
 3. Follow the setup wizard.
 
 ### Windows
