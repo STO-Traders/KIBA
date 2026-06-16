@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Generator, Optional, Any
 
 try:
@@ -45,6 +46,17 @@ class AnthropicProvider(BaseProvider):
         self.client = anthropic.Anthropic(**self._client_kwargs)
         return self.client
 
+    def _system_param(self, system) -> dict[str, Any]:
+        """Wrap the system prompt with a cache_control breakpoint so the (large, stable)
+        system + CLAUDE.md context is cached across turns — big token savings on GLM/Claude.
+        Disable with KIBA_NO_PROMPT_CACHE=1. No-op for empty/non-string system prompts."""
+        if not system:
+            return {}
+        if os.environ.get("KIBA_NO_PROMPT_CACHE") or not isinstance(system, str):
+            return {"system": system}
+        return {"system": [{"type": "text", "text": system,
+                            "cache_control": {"type": "ephemeral"}}]}
+
     def _build_chat_response(self, response: Any) -> ChatResponse:
         """Convert Anthropic SDK response into the shared ChatResponse shape."""
         content_text = ""
@@ -70,6 +82,8 @@ class AnthropicProvider(BaseProvider):
             usage={
                 "input_tokens": getattr(usage, "input_tokens", 0),
                 "output_tokens": getattr(usage, "output_tokens", 0),
+                "cache_read_input_tokens": getattr(usage, "cache_read_input_tokens", 0) or 0,
+                "cache_creation_input_tokens": getattr(usage, "cache_creation_input_tokens", 0) or 0,
             },
             finish_reason=str(getattr(response, "stop_reason", "stop")),
             tool_uses=tool_uses if tool_uses else None,
@@ -109,7 +123,7 @@ class AnthropicProvider(BaseProvider):
             model=model,
             max_tokens=max_tokens,
             messages=anthropic_messages,
-            **({"system": system} if system else {}),
+            **self._system_param(system),
             **extra_kwargs,
             **{k: v for k, v in kwargs.items() if k not in ["model", "max_tokens", "tools"]},
         )
@@ -177,7 +191,7 @@ class AnthropicProvider(BaseProvider):
             model=model,
             max_tokens=max_tokens,
             messages=anthropic_messages,
-            **({"system": system} if system else {}),
+            **self._system_param(system),
             **extra_kwargs,
             **{k: v for k, v in kwargs.items() if k not in ["model", "max_tokens", "tools"]},
         ) as stream:
