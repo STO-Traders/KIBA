@@ -31,6 +31,8 @@ def main():
         if sub == 'login':
             return handle_login()
         return show_config()
+    if _argv and _argv[0] == 'cron':
+        return handle_cron(_argv[1:])
 
     parser = argparse.ArgumentParser(
         description="Kiba - Claude Code Python Implementation",
@@ -455,6 +457,46 @@ def show_config():
         return 1
 
     return 0
+
+
+def handle_cron(argv):
+    """kiba cron <list | add "<schedule>" "<prompt>" | remove ID | run>."""
+    from src import cron
+    console = Console()
+    sub = argv[0] if argv else "list"
+
+    if sub in ("list", "ls"):
+        jobs = cron.list_jobs()
+        if not jobs:
+            console.print('[dim]No cron jobs. Add one:[/dim] kiba cron add "*/30 * * * *" "check the markets"')
+            return 0
+        for j in jobs:
+            state = "on" if j.get("enabled", True) else "off"
+            console.print(f"  [cyan]{j['id']}[/cyan] [{state}] [magenta]{j['schedule']}[/magenta]  {j['prompt'][:60]}")
+        return 0
+    if sub == "add":
+        if len(argv) < 3:
+            console.print('[red]usage: kiba cron add "<cron schedule>" "<prompt>"[/red]')
+            return 2
+        job = cron.add_job(argv[1], " ".join(argv[2:]))
+        console.print(f"[green]added cron {job['id']}:[/green] {job['schedule']}  →  {job['prompt'][:60]}")
+        return 0
+    if sub in ("remove", "rm", "delete"):
+        if len(argv) < 2:
+            console.print("[red]usage: kiba cron remove <id>[/red]")
+            return 2
+        ok = cron.remove_job(argv[1])
+        console.print("[green]removed[/green]" if ok else "[yellow]no such job[/yellow]")
+        return 0 if ok else 1
+    if sub == "run":
+        console.print("[cyan]kiba cron scheduler running — fires due jobs each minute (Ctrl+C to stop)[/cyan]")
+        try:
+            cron.run_scheduler()
+        except KeyboardInterrupt:
+            console.print("\n[dim]scheduler stopped[/dim]")
+        return 0
+    console.print(f"[red]unknown cron command: {sub}[/red] (use list/add/remove/run)")
+    return 2
 
 
 def _resolve_session(continue_session: bool = False, resume: str | None = None):
