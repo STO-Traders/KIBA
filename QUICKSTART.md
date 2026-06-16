@@ -10,7 +10,7 @@ You do **not** need Python, Homebrew, or any setup beforehand — the installer 
 ## Fastest: one-line install (macOS / Linux)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/STO-Traders/Kiba/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/STO-Traders/KIBA/main/bootstrap.sh | bash
 ```
 
 This clones Kiba and installs everything. Because nothing is "downloaded and opened,"

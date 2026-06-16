@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Kiba one-line web installer.
-#   curl -fsSL https://raw.githubusercontent.com/STO-Traders/Kiba/main/bootstrap.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/STO-Traders/KIBA/main/bootstrap.sh | bash
 #
 # Clones (or updates) Kiba, then runs the normal installer + setup wizard.
 # Bypasses macOS Gatekeeper entirely since nothing is "downloaded & opened".
 set -euo pipefail
 
-REPO_URL="${KIBA_REPO:-https://github.com/STO-Traders/Kiba.git}"
+REPO_URL="${KIBA_REPO:-https://github.com/STO-Traders/KIBA.git}"
 DEST="${KIBA_DIR:-$HOME/Kiba}"
 
 cyan(){ printf "\033[1;36m%s\033[0m\n" "$1"; }
