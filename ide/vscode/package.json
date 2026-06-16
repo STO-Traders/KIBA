@@ -1,7 +1,7 @@
 {
   "name": "kiba",
   "displayName": "KIBA",
-  "description": "KIBA — autonomous AI coding agent, in your editor.",
+  "description": "KIBA — autonomous AI coding agent for VS Code and Cursor.",
   "version": "0.1.0",
   "publisher": "sto-traders",
   "icon": "icon.png",

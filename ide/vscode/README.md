@@ -1,7 +1,12 @@
-# 🐺 KIBA — VS Code Extension
+# 🐺 KIBA — VS Code & Cursor Extension
 
-Use the KIBA agent inside VS Code. It drives your existing KIBA install via headless mode —
-no model is bundled.
+Use the KIBA agent inside **VS Code** *and* **Cursor**. It drives your existing KIBA install
+via headless mode — no model is bundled.
+
+> **Cursor users:** Cursor is a VS Code fork and runs this exact extension. Build the
+> `.vsix` (below), then in Cursor: **Extensions → ⋯ → Install from VSIX…** (or drag the
+> `.vsix` onto the Extensions panel). Everything below works identically in Cursor —
+> including the KIBA terminal in Cursor's integrated terminal.
 
 ## Commands (Cmd/Ctrl+Shift+P → "KIBA:")
 - **KIBA: Ask** — ask a question (⌘⌥K / Ctrl+Alt+K)

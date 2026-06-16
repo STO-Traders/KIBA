@@ -1,0 +1,31 @@
+<idea-plugin>
+    <id>com.stotraders.kiba</id>
+    <name>KIBA</name>
+    <version>0.1.0</version>
+    <vendor email="traders.syndicateco@gmail.com" url="https://github.com/STO-Traders/KIBA">STO-Traders</vendor>
+
+    <description><![CDATA[
+        <b>KIBA</b> — autonomous AI coding agent, inside JetBrains IDEs (IntelliJ, PyCharm,
+        WebStorm, Rider, etc.). Ask KIBA, ask about a selection, or run it on the current file.
+        Drives your existing KIBA install via headless mode — set the <code>KIBA_BIN</code>
+        environment variable or put <code>kiba</code> on PATH.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <actions>
+        <group id="Kiba.ToolsGroup" text="KIBA" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="Kiba.Ask" class="com.stotraders.kiba.KibaAskAction"
+                    text="Ask KIBA…" description="Ask KIBA a question"/>
+            <action id="Kiba.AskSelection" class="com.stotraders.kiba.KibaAskSelectionAction"
+                    text="Ask KIBA about Selection" description="Ask KIBA about the selected code"/>
+            <action id="Kiba.RunOnFile" class="com.stotraders.kiba.KibaRunOnFileAction"
+                    text="Run KIBA on Current File" description="Run KIBA autonomously on the current file"/>
+        </group>
+        <action id="Kiba.AskSelection.Editor" class="com.stotraders.kiba.KibaAskSelectionAction"
+                text="Ask KIBA about Selection" description="Ask KIBA about the selected code">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>
