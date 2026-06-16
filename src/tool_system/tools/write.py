@@ -60,6 +60,8 @@ class FileWriteTool:
             raise ToolInputError("content must be a string")
 
         path = context.ensure_allowed_path(file_path)
+        if getattr(context, "checkpoint", None) is not None:
+            context.checkpoint.capture_file(path)
 
         original_file: str | None = None
         if path.exists():

@@ -64,6 +64,8 @@ class FileEditTool:
             raise ToolInputError("old_string/new_string must be strings")
 
         path = context.ensure_allowed_path(file_path)
+        if getattr(context, "checkpoint", None) is not None:
+            context.checkpoint.capture_file(path)
 
         if not path.exists():
             raise ToolInputError(f"file does not exist: {path}")

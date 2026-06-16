@@ -31,6 +31,7 @@ class ToolContext:
     hook_runner: Any = None  # src.hooks.runner.HookRunner — fires lifecycle hooks
     provider: Any = None     # active LLM provider — lets the Agent tool spawn subagents
     _subagent_depth: int = 0  # recursion guard for nested subagents
+    checkpoint: Any = None   # src.checkpoint.CheckpointManager — for /rewind
 
     # Permission handler callback: called when a tool needs user consent.
     # Signature: (tool_name: str, message: str, suggestion: str | None)

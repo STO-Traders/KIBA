@@ -301,6 +301,9 @@ class KibaREPL:
         self.hook_runner = HookRunner(self.settings, cwd=Path.cwd())
         self.tool_context.hook_runner = self.hook_runner
         self.tool_context.provider = self.provider  # lets the Agent tool spawn subagents
+        from src.checkpoint import CheckpointManager
+        self.checkpoint = CheckpointManager()
+        self.tool_context.checkpoint = self.checkpoint  # for /rewind
 
         # Permission handler with status control for proper input handling
         self._current_status = None
@@ -355,6 +358,7 @@ class KibaREPL:
             "/q",
             "/clear",
             "/save",
+            "/rewind",
             "/load",
             "/multiline",
             "/stream",
@@ -1079,6 +1083,17 @@ class KibaREPL:
         elif cmd == '/save':
             self.save_session()
 
+        elif cmd == '/rewind':
+            cp = getattr(self, "checkpoint", None)
+            if cp is None or not cp.can_rewind():
+                self.console.print("[yellow]Nothing to rewind.[/yellow]")
+            else:
+                res = cp.rewind(self.session.conversation)
+                self.console.print(
+                    f"[green]⏪ Rewound — restored {res['restored_files']} file(s) "
+                    "and undid the last turn.[/green]"
+                )
+
         elif cmd == '/multiline':
             self.multiline_mode = not self.multiline_mode
             status = "enabled" if self.multiline_mode else "disabled"
@@ -1526,6 +1541,11 @@ class KibaREPL:
             user_input: The user message to send.
             max_turns: Maximum number of tool call turns (default 20, higher for complex commands).
         """
+        # Open a checkpoint so this turn's file + conversation changes can be /rewind-ed
+        cp = getattr(self, "checkpoint", None)
+        if cp is not None:
+            cp.begin(self.session.conversation)
+
         # UserPromptSubmit hooks — may block the prompt or inject extra context
         hr = getattr(self, "hook_runner", None)
         if hr is not None and hr.has("UserPromptSubmit"):
