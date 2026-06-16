@@ -24,6 +24,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  kiba setup              Guided first-time setup (recommended)
   kiba --version          Show version
   kiba login              Configure API keys
   kiba config             Show current configuration
@@ -50,6 +51,9 @@ Examples:
 
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
+    # setup subcommand (guided wizard)
+    setup_parser = subparsers.add_parser('setup', help='Guided first-time setup wizard')
+
     # login subcommand
     login_parser = subparsers.add_parser('login', help='Configure API keys')
 
@@ -69,7 +73,9 @@ Examples:
         return show_config()
 
     # Handle commands
-    if args.command == 'login':
+    if args.command == 'setup':
+        return handle_setup()
+    elif args.command == 'login':
         return handle_login()
     elif args.command == 'config':
         return show_config()
@@ -97,6 +103,158 @@ def _show_provider_defaults_table() -> None:
 
     console.print(table)
     console.print()
+
+
+# Curated one-click presets for the setup wizard. Each preset pins the provider,
+# base URL and model so users never hit the Base-URL footgun.
+SETUP_PRESETS = [
+    {
+        "label": "GLM — z.ai Coding Plan",
+        "blurb": "GLM-5.2 via z.ai's Anthropic-compatible endpoint (recommended)",
+        "provider": "anthropic",
+        "base_url": "https://api.z.ai/api/anthropic",
+        "model": "glm-5.2",
+        "format": "anthropic",
+        "key_hint": "your z.ai API key (z.ai dashboard → API Keys)",
+    },
+    {
+        "label": "Claude — Anthropic",
+        "blurb": "Anthropic's Claude models on the official API",
+        "provider": "anthropic",
+        "base_url": "https://api.anthropic.com",
+        "model": "claude-sonnet-4-6",
+        "format": "anthropic",
+        "key_hint": "your Anthropic API key (sk-ant-…)",
+    },
+    {
+        "label": "OpenAI — GPT",
+        "blurb": "OpenAI GPT models on the official API",
+        "provider": "openai",
+        "base_url": "https://api.openai.com/v1",
+        "model": "gpt-5.4",
+        "format": "openai",
+        "key_hint": "your OpenAI API key (sk-…)",
+    },
+    {
+        "label": "Custom / advanced",
+        "blurb": "Pick provider, Base URL and model manually",
+        "custom": True,
+    },
+]
+
+
+def _test_api_key(fmt: str, base_url: str, model: str, api_key: str):
+    """Live-test an API key with a tiny request. Returns (ok: bool, detail: str)."""
+    import json as _json
+    import urllib.request
+    import urllib.error
+
+    base = base_url.rstrip("/")
+    if fmt == "anthropic":
+        url = base + "/v1/messages"
+        headers = {
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        payload = {
+            "model": model,
+            "max_tokens": 8,
+            "messages": [{"role": "user", "content": "reply with ok"}],
+        }
+    else:  # openai-compatible
+        url = base + "/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": model,
+            "max_tokens": 8,
+            "messages": [{"role": "user", "content": "reply with ok"}],
+        }
+
+    req = urllib.request.Request(
+        url, data=_json.dumps(payload).encode(), headers=headers, method="POST"
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return (resp.status == 200, f"HTTP {resp.status}")
+    except urllib.error.HTTPError as e:
+        try:
+            body = e.read().decode()[:200]
+        except Exception:
+            body = ""
+        return (False, f"HTTP {e.code} {body}")
+    except Exception as e:
+        return (False, str(e))
+
+
+def handle_setup():
+    """Guided, preset-driven first-time setup wizard with live key validation."""
+    from src.config import set_api_key, set_default_provider
+
+    console = Console()
+    console.print("\n[bold bright_cyan]🐺 Kiba Setup[/bold bright_cyan]")
+    console.print("[dim]Pick a provider preset — Kiba fills in the rest.[/dim]\n")
+
+    for i, p in enumerate(SETUP_PRESETS, 1):
+        console.print(f"  [bold cyan]{i}[/bold cyan]. [bold]{p['label']}[/bold]")
+        console.print(f"     [dim]{p['blurb']}[/dim]")
+    console.print()
+
+    choice = Prompt.ask(
+        "Choose a setup",
+        choices=[str(i) for i in range(1, len(SETUP_PRESETS) + 1)],
+        default="1",
+    )
+    preset = SETUP_PRESETS[int(choice) - 1]
+
+    # Advanced path → reuse the full manual flow
+    if preset.get("custom"):
+        return handle_login()
+
+    provider = preset["provider"]
+    base_url = preset["base_url"]
+    model = preset["model"]
+    fmt = preset["format"]
+
+    console.print(f"\n[bold]{preset['label']}[/bold]")
+    console.print(f"  [dim]Endpoint:[/dim] {base_url}")
+    console.print(f"  [dim]Model:[/dim]    {model}\n")
+
+    while True:
+        api_key = Prompt.ask(f"Paste {preset['key_hint']}", password=True)
+        if not api_key:
+            console.print("[red]API key cannot be empty.[/red]")
+            continue
+
+        console.print("\n[dim]Testing your key against the endpoint…[/dim]")
+        ok, detail = _test_api_key(fmt, base_url, model, api_key)
+        if ok:
+            console.print("[green]✓ Key works![/green]")
+            break
+
+        console.print(f"[red]✗ Key test failed:[/red] [dim]{detail}[/dim]")
+        what = Prompt.ask(
+            "What now?",
+            choices=["retry", "save", "cancel"],
+            default="retry",
+        )
+        if what == "retry":
+            continue
+        if what == "cancel":
+            console.print("[yellow]Setup cancelled. Nothing saved.[/yellow]")
+            return 1
+        break  # save anyway
+
+    set_api_key(provider, api_key=api_key, base_url=base_url, default_model=model)
+    set_default_provider(provider)
+
+    console.print("\n[bold green]✓ Kiba is configured![/bold green]")
+    console.print(f"  Provider: [cyan]{provider}[/cyan]  ·  Model: [magenta]{model}[/magenta]")
+    console.print("\n[dim]Start chatting with:[/dim] [bold]kiba --stream[/bold]\n")
+    return 0
 
 
 def handle_login():
