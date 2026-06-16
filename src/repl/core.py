@@ -324,6 +324,27 @@ class KibaREPL:
             self.tool_context.output_style_name = style_env
             self.tool_context.output_style_dir = Path.home() / ".kiba" / "output-styles"
 
+        # MCP servers (stdio/SSE/HTTP) from .mcp.json — connect, populate mcp_clients,
+        # and register each server tool as a first-class `mcp__<server>__<tool>`.
+        self.mcp_manager = None
+        try:
+            from src.mcp_client.manager import MCPManager, load_mcp_servers
+            _servers = load_mcp_servers(Path.cwd())
+            if _servers:
+                self.mcp_manager = MCPManager()
+                _clients = self.mcp_manager.connect_all(_servers, registry=self.tool_registry)
+                self.tool_context.mcp_clients = dict(_clients)
+                import atexit
+                atexit.register(self.mcp_manager.close)
+                if not quiet:
+                    if _clients:
+                        self.console.print(f"[dim cyan]🔌 MCP connected: {', '.join(_clients)}[/dim cyan]")
+                    for _nm, _err in self.mcp_manager.errors.items():
+                        self.console.print(f"[dim red]   MCP '{_nm}' failed: {_err}[/dim red]")
+        except Exception as _e:
+            if not quiet:
+                self.console.print(f"[dim red]MCP init skipped: {_e}[/dim red]")
+
         # Original built-in commands - define this FIRST!
         self._original_built_ins = [
             "/",
