@@ -574,14 +574,31 @@ class KibaREPL:
         provider_label = f"{self.provider_name.upper()} Provider"
         model_label = self.provider.model or "Unknown model"
 
-        mascot_ascii = "\n".join([
-            "  /\\__/\\",
-            " / o  o \\",
-            "(  __  )",
-            " \\/__/  ",
+        banner_ascii = "\n".join([
+            "██╗  ██╗██╗██████╗  █████╗ ",
+            "██║ ██╔╝██║██╔══██╗██╔══██╗",
+            "█████╔╝ ██║██████╔╝███████║",
+            "██╔═██╗ ██║██╔══██╗██╔══██║",
+            "██║  ██╗██║██████╔╝██║  ██║",
+            "╚═╝  ╚═╝╚═╝╚═════╝ ╚═╝  ╚═╝",
         ])
 
+        sprite_grid = [
+            "...kkkkkkkk...",
+            ".ssssssssssss.",
+            ".ssssssssssss.",
+            ".sskksssskkss.",
+            ".sskksssskkss.",
+            ".sssssWWsssss.",
+            "ssssssssssssss",
+            "ssssssssssssss",
+            ".ss.ss..ss.ss.",
+        ]
+        sprite_colors = {"k": "black", "s": "#cd8b8b", "W": "white"}
+        mascot_ascii = "\n".join(sprite_grid)
+
         if Panel is None or Group is None or Align is None or Table is None or Text is None or Columns is None:
+            print(banner_ascii)
             print(mascot_ascii)
             print(f"Kiba v{__version__}")
             print(f"{model_label} · {provider_label}")
@@ -599,16 +616,27 @@ class KibaREPL:
         table.add_row("Workspace", Text(self._truncate_middle(display_path, content_width - 12), style="bold blue"))
 
         footer = Text("/help  •  /tools  •  /stream  •  /render-last  •  /exit", style="dim")
-        mascot_block = Text(mascot_ascii, style="bold orange3", no_wrap=True)
+        banner_block = Align.center(Text(banner_ascii, style="bold orange3", no_wrap=True))
+        mascot_block = Text(no_wrap=True)
+        for _i, _row in enumerate(sprite_grid):
+            if _i:
+                mascot_block.append("\n")
+            for _ch in _row:
+                if _ch == ".":
+                    mascot_block.append("  ")
+                else:
+                    mascot_block.append("██", style=sprite_colors[_ch])
+        info_row = Align.center(Columns([mascot_block, table], align="center", expand=False))
         body = Group(
-            Columns([mascot_block, table], align="center", expand=False),
+            banner_block,
+            Text(""),
+            info_row,
             Text(""),
             Align.center(footer),
         )
         header = Panel(
             body,
             border_style="bright_black",
-            title="[bold bright_cyan] KIBA CODE [/bold bright_cyan]",
             subtitle="[dim]interactive terminal[/dim]",
             padding=(1, 2),
         )
