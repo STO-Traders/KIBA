@@ -70,6 +70,7 @@ from pathlib import Path
 import asyncio
 import sys
 import json
+import os
 import random
 from typing import Any
 
@@ -210,6 +211,7 @@ from src.providers.anthropic_provider import AnthropicProvider
 from src.providers.base import ChatMessage
 from src.providers.minimax_provider import MinimaxProvider
 from src.tool_system.context import ToolContext
+from src.tool_system.permissions import ToolPermissionContext
 from src.tool_system.defaults import build_default_registry
 from src.tool_system.protocol import ToolCall
 from src.tool_system.agent_loop import ToolEvent, run_agent_loop, summarize_tool_result, summarize_tool_use
@@ -258,11 +260,43 @@ class KibaREPL:
         )
 
         self.tool_registry = build_default_registry()
-        self.tool_context = ToolContext(workspace_root=Path.cwd())
+
+        # Optional autonomous / broadened-access config via environment:
+        #   KIBA_AUTO_APPROVE=1      -> auto-approve every tool permission prompt
+        #                               (the bash dangerous-command blocklist still applies)
+        #   KIBA_TRUSTED_DIRS=a:b:c  -> extra dirs the agent may read/write (os.pathsep-separated)
+        #   KIBA_OUTPUT_STYLE=name   -> persona/output style from ~/.kiba/output-styles/<name>.md
+        self._auto_approve = os.environ.get("KIBA_AUTO_APPROVE", "").strip().lower() in ("1", "true", "yes", "on")
+        trusted_dirs = [d for d in os.environ.get("KIBA_TRUSTED_DIRS", "").split(os.pathsep) if d.strip()]
+
+        if trusted_dirs:
+            perm_ctx = ToolPermissionContext.from_iterables(
+                workspace_root=Path.cwd(),
+                additional_working_directories=trusted_dirs,
+                allow_docs=self._auto_approve,
+            )
+            self.tool_context = ToolContext(workspace_root=Path.cwd(), permission_context=perm_ctx)
+        else:
+            self.tool_context = ToolContext(workspace_root=Path.cwd())
+
         self.tool_context.ask_user = self._ask_user_questions
+
         # Permission handler with status control for proper input handling
         self._current_status = None
-        self.tool_context.permission_handler = self._handle_permission_request
+        if self._auto_approve:
+            self.tool_context.permission_handler = self._auto_approve_permission
+            self.console.print(
+                "[dim yellow]⚡ Autonomous mode on — tool actions auto-approved "
+                "(dangerous-command blocklist still active).[/dim yellow]"
+            )
+        else:
+            self.tool_context.permission_handler = self._handle_permission_request
+
+        # Persona / output style (falls back to the built-in 'default' if unset or missing)
+        style_env = os.environ.get("KIBA_OUTPUT_STYLE", "").strip()
+        if style_env:
+            self.tool_context.output_style_name = style_env
+            self.tool_context.output_style_dir = Path.home() / ".kiba" / "output-styles"
 
         # Original built-in commands - define this FIRST!
         self._original_built_ins = [
@@ -330,15 +364,25 @@ class KibaREPL:
             if not question_text or not isinstance(options, list) or len(options) < 2:
                 continue
 
-            self.console.print(f"\n[bold]{question_text}[/bold]")
+            header = str(q.get("header", "")).strip()
+            title = f"[bold]{question_text}[/bold]"
+            if header:
+                title = f"[bold cyan]\\[{header}][/bold cyan] {title}"
+            self.console.print(f"\n{title}")
             labels: list[str] = []
             for i, opt in enumerate(options, start=1):
                 label = str((opt or {}).get("label", "")).strip()
                 desc = str((opt or {}).get("description", "")).strip()
                 labels.append(label)
-                self.console.print(f"  {i}. {label}  [dim]{desc}[/dim]")
+                # Highlight the recommended option (Claude Code marks it "(Recommended)")
+                if "recommend" in label.lower():
+                    self.console.print(f"  [bold green]{i}. {label}[/bold green]  [dim]{desc}[/dim]")
+                else:
+                    self.console.print(f"  [bold]{i}.[/bold] {label}  [dim]{desc}[/dim]")
             other_idx = len(labels) + 1
-            self.console.print(f"  {other_idx}. Other  [dim]Provide custom text[/dim]")
+            self.console.print(f"  [bold]{other_idx}.[/bold] Other  [dim]Provide custom text[/dim]")
+            if multi:
+                self.console.print("[dim]Tip: pick multiple, comma-separated (e.g. 1,3)[/dim]")
 
             prompt = "Select (comma-separated) > " if multi else "Select > "
             raw = input(prompt).strip()
@@ -375,6 +419,20 @@ class KibaREPL:
                 pass
 
         return answers
+
+    def _auto_approve_permission(
+        self,
+        tool_name: str,
+        message: str,
+        suggestion: str | None,
+    ) -> tuple[bool, bool]:
+        """Auto-approve every tool permission prompt (KIBA_AUTO_APPROVE mode).
+
+        This only bypasses the interactive consent prompt. The hard safety floors
+        — the bash dangerous-command blocklist and the trusted-directory boundary —
+        are enforced elsewhere and still apply.
+        """
+        return (True, False)
 
     def _handle_permission_request(
         self,

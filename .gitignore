@@ -89,3 +89,6 @@ Kiba-Installer.pkg
 
 # local backup of inherited upstream readme
 README_upstream.md.bak
+
+# personal autonomous-trader launcher (local only)
+kiba-trader.command
