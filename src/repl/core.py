@@ -232,10 +232,11 @@ from src.history import HistoryLog
 class KibaREPL:
     """Interactive REPL for Kiba."""
 
-    def __init__(self, provider_name: str = "glm", stream: bool = False):
+    def __init__(self, provider_name: str = "glm", stream: bool = False, quiet: bool = False, session=None):
         self.console = Console()
         self.provider_name = provider_name
         self.stream = stream
+        self.quiet = quiet
         self.multiline_mode = False
 
         # Load configuration
@@ -253,8 +254,8 @@ class KibaREPL:
             model=config.get("default_model")
         )
 
-        # Create session
-        self.session = Session.create(
+        # Create a fresh session, or reuse one passed in (--continue / --resume)
+        self.session = session if session is not None else Session.create(
             provider_name,
             self.provider.model
         )
@@ -285,10 +286,11 @@ class KibaREPL:
         self._current_status = None
         if self._auto_approve:
             self.tool_context.permission_handler = self._auto_approve_permission
-            self.console.print(
-                "[dim yellow]⚡ Autonomous mode on — tool actions auto-approved "
-                "(dangerous-command blocklist still active).[/dim yellow]"
-            )
+            if not quiet:
+                self.console.print(
+                    "[dim yellow]⚡ Autonomous mode on — tool actions auto-approved "
+                    "(dangerous-command blocklist still active).[/dim yellow]"
+                )
         else:
             self.tool_context.permission_handler = self._handle_permission_request
 
@@ -337,16 +339,21 @@ class KibaREPL:
                     buf.insert_text("/")
                     buf.start_completion(select_first=False)
 
-        self.prompt_session = PromptSession(
-            history=FileHistory(str(history_file)),
-            auto_suggest=AutoSuggestFromHistory(),
-            completer=self.completer,
-            style=Style.from_dict({
-                'prompt': 'bold blue',
-            }),
-            key_bindings=self.bindings,
-            complete_while_typing=True,
-        )
+        if self.quiet:
+            # Headless mode never reads interactive input — skip prompt_toolkit so it
+            # doesn't emit "Input is not a terminal" on non-tty stdin.
+            self.prompt_session = None
+        else:
+            self.prompt_session = PromptSession(
+                history=FileHistory(str(history_file)),
+                auto_suggest=AutoSuggestFromHistory(),
+                completer=self.completer,
+                style=Style.from_dict({
+                    'prompt': 'bold blue',
+                }),
+                key_bindings=self.bindings,
+                complete_while_typing=True,
+            )
 
     def _ask_user_questions(self, questions: list[dict]) -> dict[str, str]:
         # Stop the Rich status spinner if running, so we can get clean input
@@ -451,6 +458,11 @@ class KibaREPL:
             Tuple of (allowed: bool, continue_without_caching: bool).
             continue_without_caching is always False since we don't cache in REPL.
         """
+        # No interactive TTY (headless/piped) → can't prompt; deny safely instead of
+        # hanging on input(). Set KIBA_AUTO_APPROVE=1 for autonomous tool use.
+        if not sys.stdin.isatty():
+            return (False, False)
+
         # Stop the Rich status spinner if running, so we can get clean input
         if self._current_status is not None:
             try:
@@ -1334,6 +1346,51 @@ class KibaREPL:
         self.console.print(Markdown(text))
         self.console.print()
         return True
+
+    def run_headless(self, prompt: str, output_format: str = "text", max_turns: int = 30) -> int:
+        """Run a single prompt non-interactively, print the result, and return an exit code.
+
+        Powers `kiba -p '...'` and piped stdin. Keeps stdout clean — plain text, or a
+        JSON envelope with --output-format json — so KIBA can be scripted, cron'd, driven
+        by the watchdog, or embedded via the SDK. Tool/streaming chrome is suppressed.
+        """
+        self.session.conversation.add_user_message(prompt)
+        try:
+            result = run_agent_loop(
+                conversation=self.session.conversation,
+                provider=self.provider,
+                tool_registry=self.tool_registry,
+                tool_context=self.tool_context,
+                max_turns=max_turns,
+                stream=False,
+                verbose=False,
+            )
+        except Exception as e:
+            print(f"kiba: error: {e}", file=sys.stderr)
+            return 1
+
+        try:
+            self.session.save()
+        except Exception:
+            pass
+
+        text = result.response_text or ""
+        if output_format == "json":
+            usage = result.usage or {}
+            print(json.dumps({
+                "result": text,
+                "session_id": self.session.session_id,
+                "num_turns": getattr(result, "num_turns", None),
+                "usage": {
+                    "input_tokens": usage.get("input_tokens", 0),
+                    "output_tokens": usage.get("output_tokens", 0),
+                },
+                "model": getattr(self.provider, "model", None),
+                "provider": self.provider_name,
+            }, ensure_ascii=False))
+        else:
+            print(text)
+        return 0
 
     def chat(self, user_input: str, max_turns: int = 20):
         """Send message to LLM and display response.

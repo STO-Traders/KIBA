@@ -20,17 +20,32 @@ def main():
         print(f"kiba version {__version__} (Python)")
         return 0
 
+    # Subcommands are matched as the FIRST bare token (before argparse) so they never
+    # compete with the headless prompt parser (`kiba -p "setup the repo"` is a prompt,
+    # `kiba setup` is the wizard).
+    _argv = sys.argv[1:]
+    if _argv and _argv[0] in ('setup', 'login', 'config'):
+        sub = _argv[0]
+        if sub == 'setup':
+            return handle_setup()
+        if sub == 'login':
+            return handle_login()
+        return show_config()
+
     parser = argparse.ArgumentParser(
         description="Kiba - Claude Code Python Implementation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  kiba setup              Guided first-time setup (recommended)
-  kiba --version          Show version
-  kiba login              Configure API keys
-  kiba config             Show current configuration
-  kiba --stream           Start REPL with live response rendering
-  kiba                    Start interactive REPL
+  kiba setup                     Guided first-time setup (recommended)
+  kiba                           Start interactive REPL
+  kiba --stream                  REPL with live response rendering
+  kiba -p "fix the failing test" Headless: run once, print result, exit
+  echo "summarize git log" | kiba -p     Headless via piped stdin
+  kiba -p "audit repo" --output-format json   Machine-readable output
+  kiba --continue                Resume your most recent session
+  kiba --resume 20260616_150052  Resume a specific session by id
+  kiba config                    Show current configuration
 """
     )
 
@@ -49,19 +64,30 @@ Examples:
         action='store_true',
         help='Enable live response rendering in the REPL'
     )
+    parser.add_argument(
+        '-p', '--print',
+        nargs='?', const='', default=None, dest='print_prompt', metavar='PROMPT',
+        help='Headless: run PROMPT once, print the result, and exit '
+             '(reads the prompt from stdin if PROMPT is omitted). For scripts/cron/CI.'
+    )
+    parser.add_argument(
+        '--output-format', choices=['text', 'json'], default='text',
+        help='Headless output format (default: text)'
+    )
+    parser.add_argument(
+        '--continue', action='store_true', dest='continue_session',
+        help='Resume the most recent session (REPL or headless)'
+    )
+    parser.add_argument(
+        '--resume', metavar='SESSION_ID', default=None,
+        help='Resume a specific session by id'
+    )
+    parser.add_argument(
+        '--max-turns', type=int, default=30,
+        help='Max tool-call turns in headless mode (default: 30)'
+    )
 
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
-
-    # setup subcommand (guided wizard)
-    setup_parser = subparsers.add_parser('setup', help='Guided first-time setup wizard')
-
-    # login subcommand
-    login_parser = subparsers.add_parser('login', help='Configure API keys')
-
-    # config subcommand
-    config_parser = subparsers.add_parser('config', help='Show current configuration')
-
-    args = parser.parse_args()
+    args, extra = parser.parse_known_args()
 
     # Handle --version
     if args.version:
@@ -73,16 +99,41 @@ Examples:
     if args.config:
         return show_config()
 
-    # Handle commands
-    if args.command == 'setup':
-        return handle_setup()
-    elif args.command == 'login':
-        return handle_login()
-    elif args.command == 'config':
-        return show_config()
+    # ---- Headless / one-shot mode -------------------------------------------
+    #   kiba -p "task"        run once, print result, exit
+    #   echo "task" | kiba    piped stdin is treated as headless
+    piped = not sys.stdin.isatty()
+    headless = (args.print_prompt is not None) or piped
+    if headless:
+        # Assemble the prompt from -p's inline value plus any trailing tokens argparse
+        # didn't consume (so `kiba -p --continue "task"` and `kiba -p task words` work).
+        parts = []
+        if args.print_prompt:
+            parts.append(args.print_prompt)
+        if extra:
+            parts.append(" ".join(extra))
+        prompt = " ".join(parts).strip()
+        if not prompt and piped:
+            prompt = sys.stdin.read().strip()
+        if not prompt:
+            print("kiba: no prompt provided (use: kiba -p 'task'  or  echo 'task' | kiba -p)",
+                  file=sys.stderr)
+            return 2
+        return run_headless_cli(
+            prompt,
+            output_format=args.output_format,
+            continue_session=args.continue_session,
+            resume=args.resume,
+            stream=args.stream,
+            max_turns=args.max_turns,
+        )
 
-    # Default: start REPL
-    return start_repl(stream=args.stream)
+    # Default: start interactive REPL
+    return start_repl(
+        stream=args.stream,
+        continue_session=args.continue_session,
+        resume=args.resume,
+    )
 
 
 def _show_provider_defaults_table() -> None:
@@ -401,13 +452,44 @@ def show_config():
     return 0
 
 
-def start_repl(stream: bool = False):
+def _resolve_session(continue_session: bool = False, resume: str | None = None):
+    """Resolve a session for --continue (most recent) or --resume <id>. None = fresh."""
+    from src.agent.session import Session
+    if resume:
+        s = Session.load(resume)
+        if s is None:
+            print(f"kiba: no session '{resume}' found; starting fresh", file=sys.stderr)
+        return s
+    if continue_session:
+        sdir = Path.home() / ".kiba" / "sessions"
+        if sdir.exists():
+            files = sorted(sdir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+            if files:
+                return Session.load(files[0].stem)
+        print("kiba: no previous session to continue; starting fresh", file=sys.stderr)
+    return None
+
+
+def run_headless_cli(prompt, output_format="text", continue_session=False,
+                     resume=None, stream=False, max_turns=30):
+    """Run a single prompt non-interactively and print the result (powers `kiba -p`)."""
+    from src.config import get_default_provider
+    from src.repl import KibaREPL
+
+    provider = get_default_provider()
+    session = _resolve_session(continue_session, resume)
+    repl = KibaREPL(provider_name=provider, stream=stream, quiet=True, session=session)
+    return repl.run_headless(prompt, output_format=output_format, max_turns=max_turns)
+
+
+def start_repl(stream: bool = False, continue_session: bool = False, resume: str | None = None):
     """Start interactive REPL."""
     from src.config import get_default_provider
     from src.repl import KibaREPL
 
     provider = get_default_provider()
-    repl = KibaREPL(provider_name=provider, stream=stream)
+    session = _resolve_session(continue_session, resume)
+    repl = KibaREPL(provider_name=provider, stream=stream, session=session)
     repl.run()
     return 0
 
