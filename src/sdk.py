@@ -1,0 +1,91 @@
+"""Kiba Agent SDK — embed KIBA's agent in your own Python.
+
+For the watchdog, STO_Bridge, or any automation that wants KIBA's full agent (tools,
+MCP, hooks, autonomy) as a programmatic call instead of the CLI.
+
+    from src.sdk import query, KibaAgent
+
+    # one-shot
+    text = query("summarize the git log")
+
+    # multi-turn (keeps conversation + context across calls)
+    agent = KibaAgent(cwd="/path/to/project")
+    print(agent.ask("read config.py"))
+    print(agent.ask("now explain the riskiest part"))   # remembers the prior turn
+
+    # structured
+    info = query_json("audit this repo for bugs")        # {result, usage, num_turns, session_id}
+
+Defaults to autonomous mode (no human to approve tool prompts) — the bash
+dangerous-command blocklist still applies. Pass auto_approve=False to disable.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import Optional
+
+
+class KibaAgent:
+    """A reusable KIBA agent. Each instance keeps its own conversation/session."""
+
+    def __init__(
+        self,
+        provider: Optional[str] = None,
+        cwd: Optional[str] = None,
+        auto_approve: bool = True,
+        output_style: Optional[str] = None,
+        trusted_dirs: Optional[list[str]] = None,
+    ):
+        if cwd:
+            os.chdir(cwd)
+        if auto_approve:
+            os.environ.setdefault("KIBA_AUTO_APPROVE", "1")
+        if output_style:
+            os.environ["KIBA_OUTPUT_STYLE"] = output_style
+        if trusted_dirs:
+            os.environ["KIBA_TRUSTED_DIRS"] = os.pathsep.join(trusted_dirs)
+
+        from src.config import get_default_provider
+        from src.repl.core import KibaREPL
+        self._repl = KibaREPL(
+            provider_name=provider or get_default_provider(),
+            stream=False,
+            quiet=True,
+        )
+
+    def ask(self, prompt: str, max_turns: int = 30) -> str:
+        """Run one turn and return the final assistant text."""
+        return self._repl.execute(prompt, max_turns=max_turns).response_text or ""
+
+    def ask_json(self, prompt: str, max_turns: int = 30) -> dict:
+        """Run one turn and return {result, num_turns, usage, session_id}."""
+        r = self._repl.execute(prompt, max_turns=max_turns)
+        u = r.usage or {}
+        return {
+            "result": r.response_text or "",
+            "num_turns": getattr(r, "num_turns", None),
+            "usage": {
+                "input_tokens": u.get("input_tokens", 0),
+                "output_tokens": u.get("output_tokens", 0),
+            },
+            "session_id": self._repl.session.session_id,
+        }
+
+    @property
+    def session_id(self) -> str:
+        return self._repl.session.session_id
+
+    @property
+    def conversation(self):
+        return self._repl.session.conversation
+
+
+def query(prompt: str, *, max_turns: int = 30, **kwargs) -> str:
+    """One-shot: run KIBA on a prompt and return the final text."""
+    return KibaAgent(**kwargs).ask(prompt, max_turns=max_turns)
+
+
+def query_json(prompt: str, *, max_turns: int = 30, **kwargs) -> dict:
+    """One-shot returning {result, num_turns, usage, session_id}."""
+    return KibaAgent(**kwargs).ask_json(prompt, max_turns=max_turns)

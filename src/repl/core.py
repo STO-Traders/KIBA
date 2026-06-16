@@ -1404,6 +1404,36 @@ class KibaREPL:
         self.console.print()
         return True
 
+    def execute(self, prompt: str, max_turns: int = 30):
+        """Run one agent turn and RETURN the AgentLoopResult (no printing/rendering).
+
+        Shared by the SDK and headless mode. Fires UserPromptSubmit/Stop hooks and saves
+        the session. Multi-turn: call repeatedly on the same REPL to keep conversation state.
+        """
+        hr = getattr(self, "hook_runner", None)
+        if hr is not None and hr.has("UserPromptSubmit"):
+            up = hr.run("UserPromptSubmit", {"prompt": prompt})
+            if up.blocked:
+                raise RuntimeError(up.message_text or "blocked by UserPromptSubmit hook")
+            if up.context_text:
+                prompt = f"{prompt}\n\n{up.context_text}"
+        self.session.conversation.add_user_message(prompt)
+        result = run_agent_loop(
+            conversation=self.session.conversation,
+            provider=self.provider,
+            tool_registry=self.tool_registry,
+            tool_context=self.tool_context,
+            max_turns=max_turns,
+            stream=False,
+        )
+        try:
+            self.session.save()
+        except Exception:
+            pass
+        if hr is not None and hr.has("Stop"):
+            hr.run("Stop", {"response": result.response_text})
+        return result
+
     def run_headless(self, prompt: str, output_format: str = "text", max_turns: int = 30) -> int:
         """Run a single prompt non-interactively, print the result, and return an exit code.
 
