@@ -1431,6 +1431,15 @@ class KibaREPL:
 
         info = PROVIDER_INFO[provider]
 
+        # Prefer the user's ALREADY-SAVED settings as defaults so reconfiguring
+        # doesn't silently reset a custom Base URL / model (e.g. a z.ai endpoint).
+        try:
+            saved = get_provider_config(provider) or {}
+        except Exception:
+            saved = {}
+        saved_base_url = saved.get("base_url") or info["default_base_url"]
+        saved_model = saved.get("default_model") or info["default_model"]
+
         # Input API Key
         api_key = Prompt.ask(
             f"Enter {provider.upper()} API Key",
@@ -1441,19 +1450,19 @@ class KibaREPL:
             self.console.print("\n[red]Error: API Key cannot be empty[/red]")
             return
 
-        # Optional: Base URL (show default)
-        self.console.print(f"\n[dim]Default:[/dim] {info['default_base_url']}")
+        # Optional: Base URL (defaults to your saved value)
+        self.console.print(f"\n[dim]Default:[/dim] {saved_base_url}")
         base_url = Prompt.ask(
             f"{provider.upper()} Base URL",
-            default=info["default_base_url"]
+            default=saved_base_url
         )
 
-        # Optional: Default Model (show options)
+        # Optional: Default Model (defaults to your saved value)
         self.console.print(f"\n[dim]Available models:[/dim] {', '.join(info['available_models'])}")
-        self.console.print(f"[dim]Default:[/dim] [bold]{info['default_model']}[/bold]")
+        self.console.print(f"[dim]Default:[/dim] [bold]{saved_model}[/bold]")
         default_model = Prompt.ask(
             f"{provider.upper()} Default Model",
-            default=info["default_model"]
+            default=saved_model
         )
 
         # Save configuration
