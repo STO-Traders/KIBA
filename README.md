@@ -106,6 +106,7 @@ The wizard offers presets so you never hand-type an endpoint:
 
 ## 📦 Other install options
 
+- **VS Code extension:** build from [`ide/vscode/`](ide/vscode/) — Ask KIBA, ask about a selection, run it autonomously on a file, or open a KIBA terminal, all from the editor.
 - **Windows installer wizard:** build a branded `KIBA-Setup.exe` from [`installer/`](installer/) (Inno Setup) — double-click GUI install with the KIBA logo + Start Menu / Desktop shortcuts.
 - **Zip:** download `Kiba.zip`, unzip, then:
   - **macOS:** double-click `Install Kiba (Mac).command`

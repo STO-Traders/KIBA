@@ -1,0 +1,49 @@
+{
+  "name": "kiba",
+  "displayName": "KIBA",
+  "description": "KIBA — autonomous AI coding agent, in your editor.",
+  "version": "0.1.0",
+  "publisher": "sto-traders",
+  "icon": "icon.png",
+  "engines": { "vscode": "^1.80.0" },
+  "categories": ["Other", "Machine Learning", "Programming Languages"],
+  "repository": { "type": "git", "url": "https://github.com/STO-Traders/KIBA" },
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "kiba.ask", "title": "Ask", "category": "KIBA" },
+      { "command": "kiba.askSelection", "title": "Ask about Selection", "category": "KIBA" },
+      { "command": "kiba.runOnFile", "title": "Run on Current File (autonomous)", "category": "KIBA" },
+      { "command": "kiba.openTerminal", "title": "Open Terminal", "category": "KIBA" }
+    ],
+    "menus": {
+      "editor/context": [
+        { "command": "kiba.askSelection", "when": "editorHasSelection", "group": "kiba@1" }
+      ]
+    },
+    "keybindings": [
+      { "command": "kiba.ask", "key": "ctrl+alt+k", "mac": "cmd+alt+k" }
+    ],
+    "configuration": {
+      "title": "KIBA",
+      "properties": {
+        "kiba.binaryPath": {
+          "type": "string",
+          "default": "kiba",
+          "description": "Path to the kiba executable (e.g. ~/Documents/Kiba/.venv/bin/kiba on macOS)."
+        },
+        "kiba.autoApprove": {
+          "type": "boolean",
+          "default": true,
+          "description": "Let KIBA run tools autonomously for 'Run on Current File' (sets KIBA_AUTO_APPROVE; the dangerous-command blocklist still applies)."
+        },
+        "kiba.maxTurns": {
+          "type": "number",
+          "default": 30,
+          "description": "Maximum tool-call turns per request."
+        }
+      }
+    }
+  }
+}
