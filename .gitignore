@@ -82,3 +82,7 @@ sessions/
 
 # Claude Code personal settings
 CLAUDE.local.md
+
+# build artifacts
+*.zip
+Kiba-Installer.pkg
