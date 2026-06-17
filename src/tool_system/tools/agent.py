@@ -91,31 +91,36 @@ class AgentTool:
                     is_error=True,
                 )
 
-        def _execute() -> str:
+        allow = set(agent_def["tools"]) if agent_def and agent_def.get("tools") else None
+
+        def _execute(ctx) -> str:
             from ..agent_loop import run_agent_loop  # lazy: avoid circular import
             from ...agent.conversation import Conversation
             conv = Conversation()
             conv.add_user_message(prompt)
-            prev = getattr(context, "_subagent_depth", 0)
-            context._subagent_depth = prev + 1
+            prev_depth = getattr(ctx, "_subagent_depth", 0)
+            prev_allow = getattr(ctx, "allowed_tool_names", None)
+            ctx._subagent_depth = prev_depth + 1
+            ctx.allowed_tool_names = allow  # enforced at registry.dispatch, not just schema-hidden
             try:
                 res = run_agent_loop(
                     conversation=conv,
                     provider=provider,
                     tool_registry=self._registry,
-                    tool_context=context,
+                    tool_context=ctx,
                     max_turns=int(max_turns),
                     stream=False,
                     system_prompt_override=(agent_def["prompt"] if agent_def else None),
-                    allowed_tools=(set(agent_def["tools"]) if agent_def and agent_def.get("tools") else None),
+                    allowed_tools=allow,
                 )
             finally:
-                context._subagent_depth = prev
+                ctx._subagent_depth = prev_depth
+                ctx.allowed_tool_names = prev_allow
             return res.response_text or ""
 
         if not background:
             try:
-                text = _execute()
+                text = _execute(context)
             except Exception as e:
                 return ToolResult(name="Agent", output={"error": str(e)}, is_error=True)
             return ToolResult(name="Agent", output={"result": text})
@@ -134,9 +139,20 @@ class AgentTool:
             "output": "",
         }
 
+        def _isolated_ctx():
+            # The background subagent runs on a daemon thread — give it its OWN mutable state
+            # (fingerprints/todos/tasks/depth) so it can't race the foreground turn. Shared
+            # infra (provider, registry, hooks, checkpoint, mcp, permissions) is kept.
+            import copy as _copy
+            c = _copy.copy(context)
+            c.read_file_fingerprints = {}
+            c.todos = []
+            c.tasks = {}
+            return c
+
         def target(stop_event) -> None:
             try:
-                holder["output"] = _execute()
+                holder["output"] = _execute(_isolated_ctx())
                 holder["status"] = "completed"
             except Exception as e:
                 holder["output"] = f"Error: {e}"

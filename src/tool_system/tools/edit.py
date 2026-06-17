@@ -21,7 +21,7 @@ class FileEditTool:
                 "additionalProperties": False,
                 "properties": {
                     "file_path": {"type": "string"},
-                    "old_string": {"type": "string"},
+                    "old_string": {"type": "string", "minLength": 1},
                     "new_string": {"type": "string"},
                     "replace_all": {"type": "boolean"},
                 },
@@ -62,6 +62,8 @@ class FileEditTool:
             raise ToolInputError("file_path must be a string")
         if not isinstance(old, str) or not isinstance(new, str):
             raise ToolInputError("old_string/new_string must be strings")
+        if old == "":
+            raise ToolInputError("old_string must not be empty (would corrupt the file)")
 
         path = context.ensure_allowed_path(file_path)
         if getattr(context, "checkpoint", None) is not None:

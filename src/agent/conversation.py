@@ -222,6 +222,11 @@ class Conversation:
                             content=block_data.get("content", ""),
                             is_error=block_data.get("is_error", False)
                         ))
+                    elif block_type == "image":
+                        msg_content.append(ImageContentBlock(
+                            type="image",
+                            source=block_data.get("source", {}),
+                        ))
             conv.messages.append(Message(
                 role=msg_data["role"],
                 content=msg_content,

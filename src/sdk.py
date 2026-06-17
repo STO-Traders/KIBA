@@ -37,10 +37,9 @@ class KibaAgent:
         output_style: Optional[str] = None,
         trusted_dirs: Optional[list[str]] = None,
     ):
-        if cwd:
-            os.chdir(cwd)
-        if auto_approve:
-            os.environ.setdefault("KIBA_AUTO_APPROVE", "1")
+        # Explicit (not setdefault) so auto_approve=False actually disables it instead of
+        # inheriting a sticky "1" from a previous instance. The REPL treats "0"/absent as off.
+        os.environ["KIBA_AUTO_APPROVE"] = "1" if auto_approve else "0"
         if output_style:
             os.environ["KIBA_OUTPUT_STYLE"] = output_style
         if trusted_dirs:
@@ -48,11 +47,20 @@ class KibaAgent:
 
         from src.config import get_default_provider
         from src.repl.core import KibaREPL
-        self._repl = KibaREPL(
-            provider_name=provider or get_default_provider(),
-            stream=False,
-            quiet=True,
-        )
+        # KibaREPL captures Path.cwd() at construction; chdir only around that and restore the
+        # host CWD so the SDK never permanently mutates the caller's working directory.
+        prev_cwd = os.getcwd()
+        try:
+            if cwd:
+                os.chdir(cwd)
+            self._repl = KibaREPL(
+                provider_name=provider or get_default_provider(),
+                stream=False,
+                quiet=True,
+            )
+        finally:
+            if cwd:
+                os.chdir(prev_cwd)
 
     def ask(self, prompt: str, max_turns: int = 30, images=None) -> str:
         """Run one turn and return the final assistant text. `images`: paths/URLs for vision."""

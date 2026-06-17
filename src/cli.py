@@ -111,6 +111,12 @@ Examples:
     piped = not sys.stdin.isatty()
     headless = (args.print_prompt is not None) or piped
     if headless:
+        # Reject stray option-like tokens (typos like --verbose) instead of silently
+        # turning them into the prompt and discarding piped stdin.
+        bad = [t for t in extra if t.startswith("-") and t != "-"]
+        if bad:
+            print(f"kiba: unrecognized option(s): {' '.join(bad)}", file=sys.stderr)
+            return 2
         # Assemble the prompt from -p's inline value plus any trailing tokens argparse
         # didn't consume (so `kiba -p --continue "task"` and `kiba -p task words` work).
         parts = []

@@ -492,7 +492,7 @@ def run_agent_loop(
                           tool_use_id=tool_id, is_error=result.is_error),
             )
             if _is_anthropic_provider(provider):
-                conversation.add_tool_result_message(tool_id, result_output)
+                conversation.add_tool_result_message(tool_id, result_output, is_error=result.is_error)
             else:
                 openai_messages.append({
                     "role": "tool", "tool_call_id": tool_id,

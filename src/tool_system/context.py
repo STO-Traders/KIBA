@@ -32,6 +32,7 @@ class ToolContext:
     provider: Any = None     # active LLM provider — lets the Agent tool spawn subagents
     _subagent_depth: int = 0  # recursion guard for nested subagents
     checkpoint: Any = None   # src.checkpoint.CheckpointManager — for /rewind
+    allowed_tool_names: Optional[set] = None  # per-subagent tool allowlist, enforced at dispatch
 
     # Permission handler callback: called when a tool needs user consent.
     # Signature: (tool_name: str, message: str, suggestion: str | None)
@@ -76,3 +77,7 @@ class ToolContext:
     def ensure_tool_allowed(self, tool_name: str) -> None:
         if self.permission_context.blocks_tool(tool_name):
             raise ToolPermissionError(f"tool is blocked by permission context: {tool_name}")
+        if (self.allowed_tool_names is not None
+                and tool_name not in self.allowed_tool_names
+                and not tool_name.startswith("mcp__")):
+            raise ToolPermissionError(f"tool not permitted for this agent: {tool_name}")
