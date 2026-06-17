@@ -83,7 +83,14 @@ def load_settings(cwd: str | Path | None = None) -> dict[str, Any]:
     # 3) enterprise managed (highest precedence)
     for p in _ENTERPRISE_CANDIDATES:
         if p.is_file():
-            merged = _deep_merge(merged, _read_json(p))
+            ent = _read_json(p)
+            merged = _deep_merge(merged, ent)
+            # Record which env keys are enterprise-mandated. These MUST override even an
+            # explicit shell value — that's the whole point of managed policy. apply_env
+            # reads this to force them; the key is stripped before settings are consumed.
+            ent_env = ent.get("env")
+            if isinstance(ent_env, dict) and ent_env:
+                merged["_enterprise_env_keys"] = sorted(str(k) for k in ent_env.keys())
             break
 
     return merged
@@ -91,11 +98,16 @@ def load_settings(cwd: str | Path | None = None) -> dict[str, Any]:
 
 def apply_env(settings: dict[str, Any]) -> None:
     """Apply settings.env into os.environ. Existing (shell-set) vars are NOT clobbered,
-    so an explicit shell value always wins over a settings default."""
+    so an explicit shell value always wins over a settings default — EXCEPT keys mandated
+    by enterprise managed policy, which override unconditionally (that's what "managed,
+    cannot be overridden" means)."""
+    forced = set(settings.get("_enterprise_env_keys") or [])
     env = settings.get("env")
     if isinstance(env, dict):
         for k, v in env.items():
-            if v is not None and k not in os.environ:
+            if v is None:
+                continue
+            if str(k) in forced or str(k) not in os.environ:
                 os.environ[str(k)] = str(v)
 
 

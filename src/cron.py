@@ -61,16 +61,24 @@ def _match(expr: str, value: int, lo: int) -> bool:
     for part in expr.split(","):
         part = part.strip()
         try:
-            if part.startswith("*/"):
-                step = int(part[2:])
-                if step > 0 and (value - lo) % step == 0:
+            step = 1
+            if "/" in part:
+                rng, s = part.split("/", 1)
+                step = int(s)
+                part = rng.strip()
+            if step <= 0:
+                continue
+            if part == "*":
+                if (value - lo) % step == 0:
                     return True
             elif "-" in part:
                 a, b = part.split("-")
-                if int(a) <= value <= int(b):
+                a, b = int(a), int(b)
+                if a <= value <= b and (value - a) % step == 0:
                     return True
-            elif int(part) == value:
-                return True
+            else:
+                if int(part) == value:
+                    return True
         except Exception:
             continue
     return False
@@ -82,12 +90,13 @@ def is_due(schedule: str, now: datetime) -> bool:
     if len(f) != 5:
         return False
     dow = (now.weekday() + 1) % 7  # cron: Sun=0..Sat=6 ; python Mon=0..Sun=6
+    dow_ok = _match(f[4], dow, 0) or (dow == 0 and _match(f[4], 7, 0))  # Sunday is 0 OR 7
     return (
         _match(f[0], now.minute, 0)
         and _match(f[1], now.hour, 0)
         and _match(f[2], now.day, 1)
         and _match(f[3], now.month, 1)
-        and _match(f[4], dow, 0)
+        and dow_ok
     )
 
 
@@ -107,8 +116,10 @@ def run_due(now: datetime | None = None, runner=None) -> list[str]:
                     from src.sdk import query
                     r = query
                 r(job["prompt"])
-            except Exception:
-                pass
+            except Exception as e:
+                import sys as _sys
+                print(f"kiba cron: job {job.get('id')} failed: {e}", file=_sys.stderr)
+                continue  # don't mark run -> retried next minute, error surfaced
             job["last_run"] = stamp
             fired.append(job["id"])
     if fired:

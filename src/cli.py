@@ -269,6 +269,14 @@ def handle_setup():
     """Guided, preset-driven first-time setup wizard with live key validation."""
     from src.config import set_api_key, set_default_provider
 
+    # Interactive prompts need a real terminal. Piped/non-TTY stdin makes Prompt.ask raise
+    # EOFError mid-wizard — fail fast with a useful pointer instead.
+    if not sys.stdin.isatty():
+        print("kiba setup: requires an interactive terminal. "
+              "Set credentials non-interactively with `kiba login` flags or by editing "
+              "~/.kiba/config.json.", file=sys.stderr)
+        return 2
+
     console = Console()
     console.print("\n[bold bright_cyan]🐺 Kiba Setup[/bold bright_cyan]")
     console.print("[dim]Pick a provider preset — Kiba fills in the rest.[/dim]\n")
@@ -375,6 +383,13 @@ def handle_setup():
 
 def handle_login():
     """Interactive API configuration."""
+    # Needs a real terminal; non-TTY stdin would make Prompt.ask raise EOFError mid-flow.
+    if not sys.stdin.isatty():
+        print("kiba login: requires an interactive terminal. "
+              "Edit ~/.kiba/config.json directly for non-interactive setup.",
+              file=sys.stderr)
+        return 2
+
     console = Console()
     console.print("\n[bold blue]Kiba - API Configuration[/bold blue]\n")
 

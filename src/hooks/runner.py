@@ -68,7 +68,9 @@ class HookRunner:
                 out.extend(entry_hooks)
                 continue
             try:
-                matched = re.search(matcher, tool_name) is not None
+                # Anchored (full) match, like Claude Code: matcher "Edit" must NOT fire on
+                # "NotebookEdit"/"MultiEdit". Use a regex alternation ("Bash|Write") to OR.
+                matched = re.fullmatch(matcher, tool_name) is not None
             except re.error:
                 matched = (matcher == tool_name)
             if matched:

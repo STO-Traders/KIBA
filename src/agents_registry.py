@@ -22,11 +22,16 @@ from .skills.frontmatter import parse_frontmatter
 
 
 def _candidate_dirs(cwd: str | Path | None) -> list[Path]:
+    # Order = precedence, because load_agent_types() keeps the FIRST definition of a name.
+    # Project-local agents must win over global ones (like Claude Code), so walk cwd → root
+    # FIRST (nearest dir wins), then fall back to the user-global dirs LAST.
     base = Path(cwd or Path.cwd())
-    dirs = [Path.home() / ".kiba" / "agents", Path.home() / ".claude" / "agents"]
+    dirs: list[Path] = []
     for d in [base, *base.parents]:
         dirs.append(d / ".kiba" / "agents")
         dirs.append(d / ".claude" / "agents")
+    dirs.append(Path.home() / ".kiba" / "agents")
+    dirs.append(Path.home() / ".claude" / "agents")
     return dirs
 
 

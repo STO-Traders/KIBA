@@ -1541,11 +1541,6 @@ class KibaREPL:
             user_input: The user message to send.
             max_turns: Maximum number of tool call turns (default 20, higher for complex commands).
         """
-        # Open a checkpoint so this turn's file + conversation changes can be /rewind-ed
-        cp = getattr(self, "checkpoint", None)
-        if cp is not None:
-            cp.begin(self.session.conversation)
-
         # UserPromptSubmit hooks — may block the prompt or inject extra context
         hr = getattr(self, "hook_runner", None)
         if hr is not None and hr.has("UserPromptSubmit"):
@@ -1555,6 +1550,14 @@ class KibaREPL:
                 return
             if up.context_text:
                 user_input = f"{user_input}\n\n{up.context_text}"
+
+        user_input = self._expand_mentions(user_input)
+
+        # Open the checkpoint ONLY now that the prompt is proceeding (not before a hook may
+        # block it), recording conv_len before add_user_message so /rewind undoes this turn.
+        cp = getattr(self, "checkpoint", None)
+        if cp is not None:
+            cp.begin(self.session.conversation)
 
         # Add user message
         self.session.conversation.add_user_message(user_input)
@@ -1615,6 +1618,8 @@ class KibaREPL:
                 self._current_status = None
                 if direct_response is not None:
                     self.console.print("\n")
+                    if hr is not None and hr.has("Stop"):
+                        hr.run("Stop", {"response": direct_response})
                     return
 
             # Use agent loop with tools for any provider that supports it

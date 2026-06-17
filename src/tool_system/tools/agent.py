@@ -142,12 +142,16 @@ class AgentTool:
         def _isolated_ctx():
             # The background subagent runs on a daemon thread — give it its OWN mutable state
             # (fingerprints/todos/tasks/depth) so it can't race the foreground turn. Shared
-            # infra (provider, registry, hooks, checkpoint, mcp, permissions) is kept.
+            # infra (provider, registry, hooks, mcp, permissions) is kept. The checkpoint
+            # manager is NOT shared: a background agent's edits must not land in the
+            # foreground's /rewind capture (and vice versa), or a rewind would clobber files
+            # the other thread is actively editing.
             import copy as _copy
             c = _copy.copy(context)
             c.read_file_fingerprints = {}
             c.todos = []
             c.tasks = {}
+            c.checkpoint = None
             return c
 
         def target(stop_event) -> None:

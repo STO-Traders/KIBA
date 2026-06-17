@@ -153,6 +153,7 @@ class AnthropicProvider(BaseProvider):
         """
         model = self._get_model(**kwargs)
         max_tokens = kwargs.get("max_tokens", _DEFAULT_MAX_TOKENS)
+        system = kwargs.pop("system", None)
 
         # Convert messages
         anthropic_messages = self._prepare_messages(messages)
@@ -167,6 +168,7 @@ class AnthropicProvider(BaseProvider):
             model=model,
             max_tokens=max_tokens,
             messages=anthropic_messages,
+            **self._system_param(system),
             **extra_kwargs,
             **{k: v for k, v in kwargs.items() if k not in ["model", "max_tokens", "tools"]},
         ) as stream:
