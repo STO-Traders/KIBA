@@ -19,6 +19,11 @@ except ModuleNotFoundError:  # pragma: no cover
 
 from .base import BaseProvider, ChatResponse, MessageInput, TextChunkCallback
 
+# Default max output tokens. 4096 truncates large tool calls — e.g. a Write whose `content`
+# is a whole file — which corrupts the JSON arguments ("missing required field"). Raise it;
+# override per-model with KIBA_MAX_TOKENS.
+_DEFAULT_MAX_TOKENS = int(os.environ.get("KIBA_MAX_TOKENS") or 8192)
+
 
 class AnthropicProvider(BaseProvider):
     """Anthropic Claude provider."""
@@ -106,7 +111,7 @@ class AnthropicProvider(BaseProvider):
             Chat response
         """
         model = self._get_model(**kwargs)
-        max_tokens = kwargs.get("max_tokens", 4096)
+        max_tokens = kwargs.get("max_tokens", _DEFAULT_MAX_TOKENS)
 
         system = kwargs.pop("system", None)
 
@@ -147,7 +152,7 @@ class AnthropicProvider(BaseProvider):
             Chunks of response content
         """
         model = self._get_model(**kwargs)
-        max_tokens = kwargs.get("max_tokens", 4096)
+        max_tokens = kwargs.get("max_tokens", _DEFAULT_MAX_TOKENS)
 
         # Convert messages
         anthropic_messages = self._prepare_messages(messages)
@@ -177,7 +182,7 @@ class AnthropicProvider(BaseProvider):
     ) -> ChatResponse:
         """Stream Anthropic text chunks and return the final structured response."""
         model = self._get_model(**kwargs)
-        max_tokens = kwargs.get("max_tokens", 4096)
+        max_tokens = kwargs.get("max_tokens", _DEFAULT_MAX_TOKENS)
         system = kwargs.pop("system", None)
         anthropic_messages = self._prepare_messages(messages)
 
