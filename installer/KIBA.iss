@@ -15,7 +15,7 @@
 #define MyAppURL "https://github.com/STO-Traders/KIBA"
 
 [Setup]
-AppId={{8F3A1C2E-KIBA-4B5D-9E10-STOTRADERS01}
+AppId={{53B443EF-CF5E-487E-A128-851F05AB6886}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
@@ -30,7 +30,6 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=lowest
-ArchitecturesInstallIn64BitMode=x64compatible
 SetupIconFile=assets\KIBA.ico
 WizardImageFile=assets\wizard-large.bmp
 WizardSmallImageFile=assets\wizard-small.bmp

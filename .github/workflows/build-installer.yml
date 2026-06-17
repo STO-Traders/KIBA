@@ -1,0 +1,44 @@
+name: Build KIBA-Setup.exe
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Compile KIBA-Setup.exe
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\KIBA.iss"
+          if (-not (Test-Path "installer\dist\KIBA-Setup.exe")) { throw "KIBA-Setup.exe was not produced" }
+          Get-Item "installer\dist\KIBA-Setup.exe" | Format-List Name, Length
+
+      - name: Upload as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KIBA-Setup
+          path: installer/dist/KIBA-Setup.exe
+
+      - name: Publish to GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: KIBA ${{ github.ref_name }}
+          files: installer/dist/KIBA-Setup.exe
+          body: |
+            🐺 **KIBA-Setup.exe** — the single-download Windows installer.
+
+            Download `KIBA-Setup.exe` below, double-click, follow the wizard. It installs
+            Python, the dependencies, and the `kiba` command, and adds a Desktop + Start Menu
+            shortcut. (Needs internet on first run to fetch the Python toolchain.)
