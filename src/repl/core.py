@@ -370,6 +370,8 @@ class KibaREPL:
             "/save",
             "/rewind",
             "/load",
+            "/resume",
+            "/doctor",
             "/multiline",
             "/stream",
             "/render-last",
@@ -1193,6 +1195,40 @@ class KibaREPL:
             self.session.conversation.clear()
             self.console.print("[green]Conversation cleared.[/green]")
 
+        elif cmd == '/doctor':
+            # Populate live diagnostics into the command context
+            try:
+                self.command_context.config["provider"] = self.provider
+                self.command_context.config["model"] = getattr(self.provider, "model", None)
+                self.command_context.config["tool_count"] = len(self.tool_registry.list_specs())
+                hr = getattr(self, "hook_runner", None)
+                if hr is not None:
+                    events = [e for e in ("PreToolUse", "PostToolUse", "UserPromptSubmit",
+                                          "Stop", "SessionStart", "SessionEnd") if hr.has(e)]
+                    self.command_context.config["hooks_events"] = events
+            except Exception:
+                pass
+            try:
+                handled, result_text = self._try_execute_new_command('doctor', '')
+                if handled and result_text:
+                    self.console.print("\n" + result_text)
+                    return
+            except Exception as e:
+                self.console.print(f"[red]/doctor failed: {e}[/red]")
+
+        elif cmd.startswith('/resume'):
+            parts = command.strip().split(maxsplit=1)
+            if len(parts) >= 2:
+                self.load_session(parts[1].strip())
+            else:
+                try:
+                    handled, result_text = self._try_execute_new_command('resume', '')
+                    if handled and result_text:
+                        self.console.print("\n" + result_text)
+                        return
+                except Exception as e:
+                    self.console.print(f"[red]/resume failed: {e}[/red]")
+
         else:
             if raw.startswith("/"):
                 if self._try_run_skill_slash(raw):
@@ -1666,6 +1702,9 @@ class KibaREPL:
                         f"turn_{result.num_turns}_tokens",
                         input_tokens + output_tokens
                     )
+                    # Model-aware token + cost accounting (for /cost)
+                    _model = getattr(self.provider, "model", None)
+                    self.cost_tracker.record_usage(_model, input_tokens, output_tokens)
                     # Also update command context for new commands
                     if hasattr(self, 'command_context') and self.command_context:
                         self.command_context.cost_tracker = self.cost_tracker

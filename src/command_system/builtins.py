@@ -259,19 +259,136 @@ def cost_command_call(args: str, context: CommandContext) -> LocalCommandResult:
             value="Cost tracking not available.",
         )
 
-    lines = ["Session Cost:", ""]
-    lines.append(f"  Total units: {tracker.total_units}")
+    from ..pricing import format_cost, get_rates
 
-    if tracker.events:
-        lines.append("")
-        lines.append("  Recent events:")
-        for event in tracker.events[-10:]:
-            lines.append(f"    - {event}")
+    model = context.config.get("model") or getattr(tracker, "last_model", None) or "?"
+    in_tok = getattr(tracker, "input_tokens", 0)
+    out_tok = getattr(tracker, "output_tokens", 0)
+    total = in_tok + out_tok
+    turns = getattr(tracker, "turns", 0)
+    cost = getattr(tracker, "estimated_cost_usd", 0.0)
+    rates = get_rates(model)
+
+    lines = ["Session Usage", ""]
+    lines.append(f"  Model:          {model}")
+    lines.append(f"  Turns:          {turns}")
+    lines.append(f"  Input tokens:   {in_tok:,}")
+    lines.append(f"  Output tokens:  {out_tok:,}")
+    lines.append(f"  Total tokens:   {total:,}")
+    if rates:
+        lines.append(f"  Rate (per 1M):  ${rates['input']:.2f} in / ${rates['output']:.2f} out")
+        lines.append(f"  Est. cost:      {format_cost(cost)}")
+    else:
+        lines.append(f"  Est. cost:      {format_cost(None)}")
+    lines.append("")
+    lines.append("  Estimates only — provider billing is authoritative.")
+    lines.append("  Override prices in ~/.kiba/pricing.json")
 
     return LocalCommandResult(
         type="text",
         value="\n".join(lines),
     )
+
+
+def doctor_command_call(args: str, context: CommandContext) -> LocalCommandResult:
+    """Handle /doctor — diagnose environment, config, providers, MCP, and deps."""
+    import importlib.util
+    import platform
+
+    ok, warn, bad = "[ok]", "[warn]", "[FAIL]"
+    lines = ["Kiba Doctor", ""]
+
+    # Python + venv
+    pyver = sys.version_info
+    py_ok = pyver >= (3, 10)
+    lines.append(f"  {ok if py_ok else bad} Python {platform.python_version()} "
+                 f"({'>= 3.10' if py_ok else 'NEEDS >= 3.10'})")
+    in_venv = sys.prefix != getattr(sys, "base_prefix", sys.prefix)
+    lines.append(f"  {ok if in_venv else warn} Virtualenv: {'active' if in_venv else 'not detected'}")
+
+    # Dependencies
+    deps = ["anthropic", "openai", "zhipuai", "rich", "prompt_toolkit", "tiktoken"]
+    missing = [d for d in deps if importlib.util.find_spec(d) is None]
+    if missing:
+        lines.append(f"  {warn} Dependencies missing: {', '.join(missing)}")
+    else:
+        lines.append(f"  {ok} Dependencies: all {len(deps)} present")
+    lines.append(f"  {ok if importlib.util.find_spec('mcp') else warn} MCP SDK: "
+                 f"{'installed' if importlib.util.find_spec('mcp') else 'not installed (MCP servers unavailable)'}")
+
+    # Config / provider
+    provider = context.config.get("provider")
+    model = context.config.get("model")
+    try:
+        from ..config import load_config, get_provider_config
+        cfg = load_config()
+        default_provider = cfg.get("default_provider")
+        prov_name = getattr(provider, "name", None) or default_provider or "?"
+        lines.append(f"  {ok} Provider: {prov_name}  Model: {model or getattr(provider,'model','?')}")
+        try:
+            pc = get_provider_config(default_provider) if default_provider else {}
+            has_key = bool(pc.get("api_key"))
+            lines.append(f"  {ok if has_key else bad} API key: {'configured' if has_key else 'MISSING — run kiba setup'}")
+            if pc.get("base_url"):
+                lines.append(f"  {ok} Base URL: {pc['base_url']}")
+        except Exception:
+            pass
+    except Exception as e:
+        lines.append(f"  {warn} Config load issue: {e}")
+
+    # MCP servers
+    try:
+        from ..mcp_client.manager import load_mcp_servers
+        servers = load_mcp_servers(context.cwd or context.workspace_root)
+        if servers:
+            lines.append(f"  {ok} MCP servers configured: {', '.join(servers.keys())}")
+        else:
+            lines.append(f"  {ok} MCP servers configured: none")
+        from ..mcp_client import token_store
+        authed = token_store.list_servers()
+        if authed:
+            lines.append(f"  {ok} MCP authenticated: {', '.join(authed)}")
+    except Exception as e:
+        lines.append(f"  {warn} MCP check issue: {e}")
+
+    # Tools + hooks
+    tool_count = context.config.get("tool_count")
+    if tool_count:
+        lines.append(f"  {ok} Tools registered: {tool_count}")
+    hooks_on = context.config.get("hooks_events")
+    if hooks_on:
+        lines.append(f"  {ok} Hooks active: {', '.join(hooks_on)}")
+
+    lines.append("")
+    lines.append("  Run `kiba setup` to fix provider/API-key issues.")
+    return LocalCommandResult(type="text", value="\n".join(lines))
+
+
+def resume_command_call(args: str, context: CommandContext) -> LocalCommandResult:
+    """Handle /resume — list recent saved sessions (REPL performs the reload)."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    sessions_dir = _Path.home() / ".kiba" / "sessions"
+    if not sessions_dir.is_dir():
+        return LocalCommandResult(type="text", value="No saved sessions yet.")
+
+    files = sorted(sessions_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not files:
+        return LocalCommandResult(type="text", value="No saved sessions yet.")
+
+    lines = ["Recent sessions (use /resume <id> to reload):", ""]
+    for f in files[:10]:
+        sid = f.stem
+        meta = ""
+        try:
+            data = _json.loads(f.read_text(encoding="utf-8"))
+            msgs = len((data.get("conversation") or {}).get("messages") or [])
+            meta = f"  [{data.get('provider','?')}/{data.get('model','?')}, {msgs} msgs, updated {data.get('updated_at','?')[:19]}]"
+        except Exception:
+            pass
+        lines.append(f"  {sid}{meta}")
+    return LocalCommandResult(type="text", value="\n".join(lines))
 
 
 def context_command_call(args: str, context: CommandContext) -> LocalCommandResult:
@@ -605,6 +722,20 @@ COMPACT_COMMAND = LocalCommand(
     supports_non_interactive=True,
 )
 
+DOCTOR_COMMAND = LocalCommand(
+    name="doctor",
+    description="Diagnose environment, config, providers, MCP, and dependencies",
+    argument_hint="",
+    supports_non_interactive=True,
+)
+
+RESUME_COMMAND = LocalCommand(
+    name="resume",
+    description="List and reload a previous session",
+    argument_hint="[session-id]",
+    supports_non_interactive=True,
+)
+
 INIT_COMMAND = PromptCommand(
     name="init",
     description="Initialize new CLAUDE.md file(s) and optional skills/hooks with codebase documentation",
@@ -649,6 +780,10 @@ def execute_command_sync(cmd_name: str, args: str, context: CommandContext) -> t
             result = context_command_call(args, context)
         elif cmd is COMPACT_COMMAND:
             result = compact_command_call(args, context)
+        elif cmd is DOCTOR_COMMAND:
+            result = doctor_command_call(args, context)
+        elif cmd is RESUME_COMMAND:
+            result = resume_command_call(args, context)
         else:
             return False, None, f"Command not implemented for sync execution: {cmd_name}"
 
@@ -665,6 +800,8 @@ SKILLS_COMMAND.set_call(skills_command_call)
 COST_COMMAND.set_call(cost_command_call)
 CONTEXT_COMMAND.set_call(context_command_call)
 COMPACT_COMMAND.set_call(compact_command_call)
+DOCTOR_COMMAND.set_call(doctor_command_call)
+RESUME_COMMAND.set_call(resume_command_call)
 
 
 def get_builtin_commands() -> list[Command]:
@@ -677,6 +814,8 @@ def get_builtin_commands() -> list[Command]:
         COST_COMMAND,
         CONTEXT_COMMAND,
         COMPACT_COMMAND,
+        DOCTOR_COMMAND,
+        RESUME_COMMAND,
         INIT_COMMAND,
     ]
 

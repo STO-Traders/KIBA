@@ -11,6 +11,7 @@ from .glob import GlobTool
 from .grep import GrepTool
 from .lsp import LSPTool
 from .mcp import MCPTool
+from .mcp_auth import McpAuthTool
 from .mcp_resources import ListMcpResourcesTool, ReadMcpResourceTool
 from .misc import NotebookEditTool, PowerShellTool, REPLTool, RemoteTriggerTool, SendMessageTool, TestingPermissionTool
 from .plan_mode import EnterPlanModeTool, ExitPlanModeTool
@@ -49,6 +50,7 @@ __all__ = [
     "GrepTool",
     "LSPTool",
     "MCPTool",
+    "McpAuthTool",
     "ListMcpResourcesTool",
     "ReadMcpResourceTool",
     "NotebookEditTool",

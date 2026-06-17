@@ -213,12 +213,29 @@ class MCPManager:
                 read, write = await stack.enter_async_context(stdio_client(params))
             elif cfg.get("url"):
                 ttype = (cfg.get("type") or "http").lower()
+                # Auth: explicit cfg headers + any bearer token stored via McpAuth.
+                from . import token_store
+                headers = dict(cfg.get("headers") or {})
+                headers.update(token_store.auth_header(name))
+                if cfg.get("token"):  # inline static token in .mcp.json
+                    headers.setdefault("Authorization", f"Bearer {cfg['token']}")
+                _hdrs = headers or None
                 if ttype == "sse":
                     from mcp.client.sse import sse_client
-                    read, write = await stack.enter_async_context(sse_client(cfg["url"]))
+                    try:
+                        read, write = await stack.enter_async_context(
+                            sse_client(cfg["url"], headers=_hdrs)
+                        )
+                    except TypeError:  # older SDK without headers kwarg
+                        read, write = await stack.enter_async_context(sse_client(cfg["url"]))
                 else:
                     from mcp.client.streamable_http import streamablehttp_client
-                    res = await stack.enter_async_context(streamablehttp_client(cfg["url"]))
+                    try:
+                        res = await stack.enter_async_context(
+                            streamablehttp_client(cfg["url"], headers=_hdrs)
+                        )
+                    except TypeError:  # older SDK without headers kwarg
+                        res = await stack.enter_async_context(streamablehttp_client(cfg["url"]))
                     read, write = res[0], res[1]
             else:
                 raise ValueError("MCP server config needs 'command' (stdio) or 'url' (http/sse)")
