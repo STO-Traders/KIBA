@@ -243,7 +243,7 @@ def run_agent_loop(
     provider: BaseProvider,
     tool_registry: ToolRegistry,
     tool_context: ToolContext,
-    max_turns: int = 20,
+    max_turns: int = 50,
     stream: bool = False,
     verbose: bool = False,
     on_event: ToolEventHandler | None = None,
@@ -501,7 +501,10 @@ def run_agent_loop(
 
     # Reached max turns
     return AgentLoopResult(
-        response_text="[Max tool turns reached]",
+        response_text=(
+            f"[Reached the {max_turns}-tool-turn limit before finishing. "
+            "Send 'continue' to keep going, or raise the limit with KIBA_MAX_TURNS.]"
+        ),
         usage=total_usage if total_usage["input_tokens"] > 0 or total_usage["output_tokens"] > 0 else None,
         num_turns=turn_count,
     )

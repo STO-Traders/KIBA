@@ -1589,16 +1589,25 @@ class KibaREPL:
             print(text)
         return 0
 
-    def chat(self, user_input: str, max_turns: int = 20):
+    def chat(self, user_input: str, max_turns: int | None = None):
         """Send message to LLM and display response.
 
         Args:
             user_input: The user message to send.
-            max_turns: Maximum number of tool call turns (default 20, higher for complex commands).
+            max_turns: Tool-call turns before stopping. Defaults to KIBA_MAX_TURNS
+                (or 100) — generous so real multi-step tasks don't halt mid-way.
         """
         # Ignore blank/whitespace-only input — sending it 400s the provider and dumps a traceback.
         if not (user_input or "").strip():
             return
+
+        # Resolve the tool-turn budget (env override; generous default so a long
+        # multi-step task doesn't stop at "[Max tool turns reached]" mid-flight).
+        if max_turns is None:
+            try:
+                max_turns = int(os.environ.get("KIBA_MAX_TURNS") or 100)
+            except (TypeError, ValueError):
+                max_turns = 100
 
         # UserPromptSubmit hooks — may block the prompt or inject extra context
         hr = getattr(self, "hook_runner", None)

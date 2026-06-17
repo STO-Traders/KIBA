@@ -16,6 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README and contributor docs now prefer `uv`-based setup instructions
 - Documentation now distinguishes provider-level streaming interfaces from the current turn-based CLI output
 
+## [1.2.2] - 2026-06-17
+
+### Fixed
+- Tool calls with large arguments (e.g. `Write` of a whole file) no longer fail with
+  "missing required field 'file_path'/'content'": the default output cap was 8192 tokens,
+  which truncated the tool-call JSON mid-arguments. Raised the default to 16384
+  (still overridable with `KIBA_MAX_TOKENS`).
+- Long multi-step tasks no longer stop early at "[Max tool turns reached]": the
+  interactive tool-turn budget was 20. Raised the default to 100 (overridable with
+  `KIBA_MAX_TURNS`), the agent-loop floor to 50, and made the limit message actionable.
+
 ## [1.2.1] - 2026-06-16
 
 ### Added
@@ -160,5 +171,6 @@ The focus was on building a solid foundation with clean architecture, comprehens
 
 ---
 
+[1.2.2]: https://github.com/STO-Traders/KIBA/releases/tag/v1.2.2
 [1.2.1]: https://github.com/STO-Traders/KIBA/releases/tag/v1.2.1
 [0.1.0]: https://github.com/STO-Traders/KIBA/releases/tag/v0.1.0
