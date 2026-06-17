@@ -16,6 +16,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README and contributor docs now prefer `uv`-based setup instructions
 - Documentation now distinguishes provider-level streaming interfaces from the current turn-based CLI output
 
+## [1.2.1] - 2026-06-16
+
+### Added
+- `McpAuthTool` + token store: bearer and OAuth2 client-credentials auth for remote (http/sse) MCP servers; the manager injects `Authorization` headers on connect
+- `/doctor` command: environment, dependency, provider/API-key, MCP, hooks, and tool-count diagnostics
+- `/resume` command: list and reload previous sessions
+- Model-aware token + USD cost tracking (`pricing.py`, `CostTracker.record_usage`, upgraded `/cost`); prices overridable via `~/.kiba/pricing.json`
+
+### Fixed
+- REPL launch crash: `provider_class` was referenced before assignment, crashing `kiba`/`kiba --stream` on startup with `NameError`
+- Windows installer: replaced a non-ASCII em-dash that corrupted `install.ps1` under PowerShell's ANSI codepage; one-liner now refreshes PATH so `kiba` works in the same window
+- macOS/Linux installer: ensure `~/.local/bin` is on PATH for new shells
+- Crash on non-integer `KIBA_MAX_RETRIES` / `KIBA_MAX_TOKENS` (failed at import); now fall back to defaults
+- Crash on corrupt/incomplete session files; `Session.load` now returns `None` gracefully
+- `glm` provider now honors a configured `base_url` instead of always using the default endpoint
+- `/doctor` / `/resume` now route and render correctly (status tags and metadata no longer swallowed by Rich markup; `/resume <id>` actually loads)
+- `/load` re-points the active conversation; session IDs use microsecond precision to avoid same-second collisions
+- `TaskGet` no longer `KeyError`s on background-subagent tasks; blank input is ignored instead of erroring
+
 ## [0.1.0] - 2026-04-01
 
 ### Added
@@ -141,4 +160,5 @@ The focus was on building a solid foundation with clean architecture, comprehens
 
 ---
 
+[1.2.1]: https://github.com/STO-Traders/KIBA/releases/tag/v1.2.1
 [0.1.0]: https://github.com/STO-Traders/KIBA/releases/tag/v0.1.0

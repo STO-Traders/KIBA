@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kiba"
-version = "0.1.0"
+version = "1.2.1"
 description = "KIBA — an agentic AI coding platform for your terminal. Bring your own model (Claude, GLM, GPT, Minimax)."
 readme = "README.md"
 license = {text = "MIT"}
