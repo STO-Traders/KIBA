@@ -11,6 +11,7 @@ from abc import abstractmethod
 from typing import Any, Generator, Optional
 
 from .base import BaseProvider, ChatResponse, MessageInput, TextChunkCallback
+from ._retry import call_with_retries as _call_with_retries
 
 
 def _convert_to_openai_tool_schema(anthropic_tool: dict[str, Any]) -> dict[str, Any] | None:
@@ -116,13 +117,15 @@ class OpenAICompatibleProvider(BaseProvider):
             converted = [_convert_to_openai_tool_schema(t) for t in tools]
             extra_kwargs["tools"] = [t for t in converted if t is not None]
 
-        # Make API call
-        response = self.client.chat.completions.create(
+        # Make API call (retry transient overload/rate-limit/5xx with backoff)
+        on_retry = kwargs.pop("on_retry", None)
+        rest = {k: v for k, v in kwargs.items() if k not in ["model", "tools"]}
+        response = _call_with_retries(lambda: self.client.chat.completions.create(
             model=model,
             messages=provider_messages,
             **extra_kwargs,
-            **{k: v for k, v in kwargs.items() if k not in ["model", "tools"]},
-        )
+            **rest,
+        ), on_retry=on_retry)
 
         # Extract content
         choice = response.choices[0]
@@ -186,14 +189,17 @@ class OpenAICompatibleProvider(BaseProvider):
             converted = [_convert_to_openai_tool_schema(t) for t in tools]
             extra_kwargs["tools"] = [t for t in converted if t is not None]
 
-        # Stream API call
-        stream = self.client.chat.completions.create(
+        # Stream API call (retry the connect phase — create() makes the request before any
+        # chunk is read, so a transient 529/429 here is safe to retry without duplicating).
+        on_retry = kwargs.pop("on_retry", None)
+        rest = {k: v for k, v in kwargs.items() if k not in ["model", "tools"]}
+        stream = _call_with_retries(lambda: self.client.chat.completions.create(
             model=model,
             messages=provider_messages,
             stream=True,
             **extra_kwargs,
-            **{k: v for k, v in kwargs.items() if k not in ["model", "tools"]},
-        )
+            **rest,
+        ), on_retry=on_retry)
 
         for chunk in stream:
             if chunk.choices[0].delta.content is not None:
@@ -215,13 +221,15 @@ class OpenAICompatibleProvider(BaseProvider):
             converted = [_convert_to_openai_tool_schema(t) for t in tools]
             extra_kwargs["tools"] = [t for t in converted if t is not None]
 
-        stream = self.client.chat.completions.create(
+        on_retry = kwargs.pop("on_retry", None)
+        rest = {k: v for k, v in kwargs.items() if k not in ["model", "tools"]}
+        stream = _call_with_retries(lambda: self.client.chat.completions.create(
             model=model,
             messages=provider_messages,
             stream=True,
             **extra_kwargs,
-            **{k: v for k, v in kwargs.items() if k not in ["model", "tools"]},
-        )
+            **rest,
+        ), on_retry=on_retry)
 
         content_parts: list[str] = []
         response_model = model

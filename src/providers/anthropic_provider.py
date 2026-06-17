@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import Generator, Optional, Any
 
 try:
@@ -18,6 +19,12 @@ except ModuleNotFoundError:  # pragma: no cover
     anthropic = _MissingAnthropic()
 
 from .base import BaseProvider, ChatResponse, MessageInput, TextChunkCallback
+from ._retry import (
+    MAX_RETRIES as _MAX_RETRIES,
+    is_transient_error as _is_transient_error,
+    retry_delay as _retry_delay,
+    call_with_retries as _call_with_retries,
+)
 
 # Default max output tokens. 4096 truncates large tool calls — e.g. a Write whose `content`
 # is a whole file — which corrupts the JSON arguments ("missing required field"). Raise it;
@@ -124,14 +131,17 @@ class AnthropicProvider(BaseProvider):
         if tools:
             extra_kwargs["tools"] = tools
 
-        response = client.messages.create(
+        on_retry = kwargs.pop("on_retry", None)
+        rest = {k: v for k, v in kwargs.items() if k not in ["model", "max_tokens", "tools"]}
+
+        response = _call_with_retries(lambda: client.messages.create(
             model=model,
             max_tokens=max_tokens,
             messages=anthropic_messages,
             **self._system_param(system),
             **extra_kwargs,
-            **{k: v for k, v in kwargs.items() if k not in ["model", "max_tokens", "tools"]},
-        )
+            **rest,
+        ), on_retry=on_retry)
 
         return self._build_chat_response(response)
 
@@ -154,6 +164,7 @@ class AnthropicProvider(BaseProvider):
         model = self._get_model(**kwargs)
         max_tokens = kwargs.get("max_tokens", _DEFAULT_MAX_TOKENS)
         system = kwargs.pop("system", None)
+        kwargs.pop("on_retry", None)
 
         # Convert messages
         anthropic_messages = self._prepare_messages(messages)
@@ -163,17 +174,29 @@ class AnthropicProvider(BaseProvider):
         extra_kwargs: dict[str, Any] = {}
         if tools:
             extra_kwargs["tools"] = tools
+        rest = {k: v for k, v in kwargs.items() if k not in ["model", "max_tokens", "tools"]}
 
-        with client.messages.stream(
-            model=model,
-            max_tokens=max_tokens,
-            messages=anthropic_messages,
-            **self._system_param(system),
-            **extra_kwargs,
-            **{k: v for k, v in kwargs.items() if k not in ["model", "max_tokens", "tools"]},
-        ) as stream:
-            for text in stream.text_stream:
-                yield text
+        # Retry only the connect phase: once we've yielded a chunk, a transient failure can't
+        # be replayed without duplicating output, so we let it propagate.
+        yielded = False
+        for i in range(_MAX_RETRIES + 1):
+            try:
+                with client.messages.stream(
+                    model=model,
+                    max_tokens=max_tokens,
+                    messages=anthropic_messages,
+                    **self._system_param(system),
+                    **extra_kwargs,
+                    **rest,
+                ) as stream:
+                    for text in stream.text_stream:
+                        yielded = True
+                        yield text
+                return
+            except Exception as e:  # noqa: BLE001
+                if i >= _MAX_RETRIES or not _is_transient_error(e) or yielded:
+                    raise
+                time.sleep(_retry_delay(i))
 
     def chat_stream_response(
         self,
@@ -186,38 +209,64 @@ class AnthropicProvider(BaseProvider):
         model = self._get_model(**kwargs)
         max_tokens = kwargs.get("max_tokens", _DEFAULT_MAX_TOKENS)
         system = kwargs.pop("system", None)
+        on_retry = kwargs.pop("on_retry", None)
         anthropic_messages = self._prepare_messages(messages)
 
         client = self._ensure_client()
         extra_kwargs: dict[str, Any] = {}
         if tools:
             extra_kwargs["tools"] = tools
+        rest = {k: v for k, v in kwargs.items() if k not in ["model", "max_tokens", "tools"]}
 
-        streamed_text = ""
-        with client.messages.stream(
-            model=model,
-            max_tokens=max_tokens,
-            messages=anthropic_messages,
-            **self._system_param(system),
-            **extra_kwargs,
-            **{k: v for k, v in kwargs.items() if k not in ["model", "max_tokens", "tools"]},
-        ) as stream:
-            for text in stream.text_stream:
-                if not text:
-                    continue
-                streamed_text += text
-                if on_text_chunk is not None:
-                    on_text_chunk(text)
+        # `delivered` tracks whether any chunk reached on_text_chunk. A transient failure is
+        # only safe to retry while it's False — once text is on screen, replaying would
+        # duplicate it, so we re-raise instead.
+        state = {"streamed": "", "delivered": False}
+
+        def attempt():
+            state["streamed"] = ""
+            final = None
+            with client.messages.stream(
+                model=model,
+                max_tokens=max_tokens,
+                messages=anthropic_messages,
+                **self._system_param(system),
+                **extra_kwargs,
+                **rest,
+            ) as stream:
+                for text in stream.text_stream:
+                    if not text:
+                        continue
+                    state["streamed"] += text
+                    state["delivered"] = True
+                    if on_text_chunk is not None:
+                        on_text_chunk(text)
+                try:
+                    return stream.get_final_message()
+                except Exception:
+                    return None
+
+        final_message = None
+        for i in range(_MAX_RETRIES + 1):
             try:
-                final_message = stream.get_final_message()
-            except Exception:
-                final_message = None
+                final_message = attempt()
+                break
+            except Exception as e:  # noqa: BLE001
+                if i >= _MAX_RETRIES or not _is_transient_error(e) or state["delivered"]:
+                    raise
+                delay = _retry_delay(i)
+                if on_retry is not None:
+                    try:
+                        on_retry(i + 1, _MAX_RETRIES, delay, e)
+                    except Exception:
+                        pass
+                time.sleep(delay)
 
         if final_message is not None:
             return self._build_chat_response(final_message)
 
         return ChatResponse(
-            content=streamed_text,
+            content=state["streamed"],
             model=model,
             usage={},
             finish_reason="stop",

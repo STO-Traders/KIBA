@@ -1574,6 +1574,10 @@ class KibaREPL:
         if cp is not None:
             cp.begin(self.session.conversation)
 
+        # Snapshot history length so a turn that dies on a transient API error can be rolled
+        # back to here — letting the user just resend without a duplicate message piling up.
+        _conv_len_before = len(self.session.conversation.messages)
+
         # Add user message
         self.session.conversation.add_user_message(user_input)
 
@@ -1678,6 +1682,35 @@ class KibaREPL:
 
         except Exception as e:
             error_str = str(e)
+
+            # Make sure the spinner is stopped before we print anything.
+            if self._current_status is not None:
+                try:
+                    self._current_status.stop()
+                except Exception:
+                    pass
+                self._current_status = None
+
+            # Transient backend overload / rate-limit / 5xx. KIBA already retried with
+            # backoff inside the provider; if it still failed, show a clean message (no
+            # stack trace) and roll the turn back so the user can simply resend.
+            from src.providers._retry import is_transient_error
+            if is_transient_error(e):
+                try:
+                    del self.session.conversation.messages[_conv_len_before:]
+                except Exception:
+                    pass
+                first_line = (error_str.splitlines() or [""])[0][:160]
+                self.console.print(
+                    "\n[yellow]🐺 The model service is temporarily overloaded "
+                    "(busy backend — not your fault).[/yellow]"
+                )
+                self.console.print(f"[dim]{type(e).__name__}: {first_line}[/dim]")
+                self.console.print(
+                    "[dim]KIBA retried automatically and it still didn't clear. "
+                    "Give it a few seconds, then send your message again.[/dim]"
+                )
+                return
 
             # Check for authentication errors
             if "401" in error_str or "authentication" in error_str.lower() or "令牌" in error_str:
