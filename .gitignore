@@ -95,3 +95,6 @@ kiba-trader.command
 
 # Inno Setup build output
 installer/dist/
+
+# built desktop app bundles
+/dist/

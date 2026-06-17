@@ -41,6 +41,23 @@ if ($userPath -notlike "*$ScriptsDir*") {
 }
 $env:Path = "$ScriptsDir;$env:Path"  # also works immediately in this window
 
+# 3c) Desktop shortcut with the KIBA icon
+try {
+    $desktop = [Environment]::GetFolderPath("Desktop")
+    $iconPath = Join-Path $ScriptDir "installer\assets\KIBA.ico"
+    $ws = New-Object -ComObject WScript.Shell
+    $sc = $ws.CreateShortcut((Join-Path $desktop "KIBA.lnk"))
+    $sc.TargetPath = $KibaBin
+    $sc.Arguments = "--stream"
+    $sc.WorkingDirectory = $ScriptDir
+    if (Test-Path $iconPath) { $sc.IconLocation = $iconPath }
+    $sc.Description = "KIBA - autonomous AI coding agent"
+    $sc.Save()
+    Write-Host "Created a KIBA shortcut on your Desktop." -ForegroundColor Green
+} catch {
+    Write-Host "Could not create desktop shortcut: $_" -ForegroundColor Yellow
+}
+
 # 4) setup wizard
 Write-Host "`nLaunching the setup wizard ..." -ForegroundColor Cyan
 & $KibaBin setup
