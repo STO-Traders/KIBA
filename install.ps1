@@ -37,9 +37,9 @@ $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($null -eq $userPath) { $userPath = "" }
 if ($userPath -notlike "*$ScriptsDir*") {
     [Environment]::SetEnvironmentVariable("Path", ($userPath.TrimEnd(';') + ";" + $ScriptsDir), "User")
-    Write-Host "Added 'kiba' to your PATH (open a NEW terminal to use it anywhere)." -ForegroundColor Green
+    Write-Host "Added 'kiba' to your PATH." -ForegroundColor Green
 }
-$env:Path = "$ScriptsDir;$env:Path"  # also works immediately in this window
+$env:Path = "$ScriptsDir;$env:Path"  # works immediately in this window / session
 
 # 3c) Desktop shortcut with the KIBA icon
 try {
@@ -65,7 +65,8 @@ Write-Host "`nLaunching the setup wizard ..." -ForegroundColor Cyan
 # 5) summary
 Write-Host "`nKiba is ready!" -ForegroundColor Green
 Write-Host ""
-Write-Host "Start Kiba in a NEW terminal (kiba is now on your PATH):"
+Write-Host "Start Kiba with:"
 Write-Host "  kiba --stream"
 Write-Host ""
+Write-Host "(If 'kiba' isn't found in an old terminal, open a new one — PATH was updated.)"
 Write-Host "Re-run setup later with:  kiba setup"
