@@ -50,22 +50,30 @@ class Session:
         if not session_file.exists():
             return None
 
-        with open(session_file, 'r') as f:
-            data = json.load(f)
+        # Return None (not raise) on any malformed/incomplete/corrupt session file —
+        # both callers (CLI --resume and REPL /load) already handle None gracefully.
+        try:
+            with open(session_file, 'r') as f:
+                data = json.load(f)
 
-        return cls(
-            session_id=data["session_id"],
-            provider=data["provider"],
-            model=data["model"],
-            conversation=Conversation.from_dict(data["conversation"]),
-            created_at=data["created_at"],
-            updated_at=data["updated_at"]
-        )
+            return cls(
+                session_id=data.get("session_id", session_id),
+                provider=data["provider"],
+                model=data["model"],
+                conversation=Conversation.from_dict(data.get("conversation", {})),
+                created_at=data.get("created_at", datetime.now().isoformat()),
+                updated_at=data.get("updated_at",
+                                    data.get("created_at", datetime.now().isoformat())),
+            )
+        except (KeyError, ValueError, TypeError, json.JSONDecodeError):
+            return None
 
     @classmethod
     def create(cls, provider: str, model: str) -> 'Session':
         """Create a new session."""
-        session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Microsecond precision so two sessions created in the same second don't
+        # collide and overwrite each other on disk. Still lexically sortable.
+        session_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         return cls(
             session_id=session_id,
             provider=provider,

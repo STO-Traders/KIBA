@@ -187,7 +187,9 @@ class MCPManager:
             try:
                 client = self._connect_one(name, cfg)
             except Exception as e:
-                self.errors[name] = str(e)
+                # Some exceptions (CancelledError/TimeoutError) stringify to "",
+                # which would print a blank reason — fall back to the class name.
+                self.errors[name] = str(e) or type(e).__name__
                 continue
             self.clients[name] = client
             if registry is not None:

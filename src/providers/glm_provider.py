@@ -36,7 +36,12 @@ class GLMProvider(OpenAICompatibleProvider):
             raise ModuleNotFoundError(
                 "zhipuai package is not installed. Install optional dependencies to use GLMProvider."
             )
-        return ZhipuAI(api_key=self.api_key)
+        # Forward a configured base_url (e.g. a z.ai/self-hosted endpoint) instead of
+        # silently hitting the hardcoded bigmodel.cn default.
+        kwargs: dict[str, Any] = {"api_key": self.api_key}
+        if self.base_url:
+            kwargs["base_url"] = self.base_url
+        return ZhipuAI(**kwargs)
 
     def get_available_models(self) -> list[str]:
         """Get list of available GLM models.

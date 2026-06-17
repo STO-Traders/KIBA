@@ -28,7 +28,16 @@ _TRANSIENT_NAMES = {
     "APIStatusError",  # only treated transient when its status_code is in _TRANSIENT_STATUS
 }
 
-MAX_RETRIES = int(os.environ.get("KIBA_MAX_RETRIES") or 6)
+def _int_env(name: str, default: int) -> int:
+    """Parse an int env var, falling back to default on missing/blank/garbage input
+    (a bad value must never crash the CLI at import time)."""
+    try:
+        return int(os.environ.get(name) or default)
+    except (TypeError, ValueError):
+        return default
+
+
+MAX_RETRIES = _int_env("KIBA_MAX_RETRIES", 6)
 
 
 def is_transient_error(exc: BaseException) -> bool:

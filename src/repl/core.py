@@ -990,6 +990,7 @@ class KibaREPL:
                 'save', 'load', 'multiline', 'stream', 'render-last',
                 'skill',
                 'context', 'compact',  # These need special handling
+                'doctor', 'resume',    # live config / route-by-id in the elif chain below
                 ''
             }
 
@@ -1021,7 +1022,9 @@ class KibaREPL:
                     handled, result_text = self._try_execute_new_command(cmd_name, args)
                     if handled:
                         if result_text:
-                            self.console.print("\n" + result_text)
+                            # markup=False: command output is plain text that may
+                            # legitimately contain "[...]" (e.g. status tags, metadata)
+                            self.console.print("\n" + result_text, markup=False)
                         self.console.print()
                         return
                 except Exception as e:
@@ -1212,7 +1215,7 @@ class KibaREPL:
             try:
                 handled, result_text = self._try_execute_new_command('doctor', '')
                 if handled and result_text:
-                    self.console.print("\n" + result_text)
+                    self.console.print("\n" + result_text, markup=False)
                     return
             except Exception as e:
                 self.console.print(f"[red]/doctor failed: {e}[/red]")
@@ -1225,7 +1228,7 @@ class KibaREPL:
                 try:
                     handled, result_text = self._try_execute_new_command('resume', '')
                     if handled and result_text:
-                        self.console.print("\n" + result_text)
+                        self.console.print("\n" + result_text, markup=False)
                         return
                 except Exception as e:
                     self.console.print(f"[red]/resume failed: {e}[/red]")
@@ -1593,6 +1596,10 @@ class KibaREPL:
             user_input: The user message to send.
             max_turns: Maximum number of tool call turns (default 20, higher for complex commands).
         """
+        # Ignore blank/whitespace-only input — sending it 400s the provider and dumps a traceback.
+        if not (user_input or "").strip():
+            return
+
         # UserPromptSubmit hooks — may block the prompt or inject extra context
         hr = getattr(self, "hook_runner", None)
         if hr is not None and hr.has("UserPromptSubmit"):
@@ -1875,6 +1882,10 @@ class KibaREPL:
 
         # Replace current session
         self.session = loaded_session
+        # Re-point the command context at the loaded conversation so /compact,
+        # /context, /clear (new command system) operate on the active session.
+        if getattr(self, "command_context", None) is not None:
+            self.command_context.conversation = loaded_session.conversation
         self.console.print(f"[green]Session loaded: {session_id}[/green]")
         self.console.print(f"[dim]Provider: {loaded_session.provider}, Model: {loaded_session.model}[/dim]")
         self.console.print(f"[dim]Messages: {len(loaded_session.conversation.messages)}[/dim]")
@@ -1884,4 +1895,10 @@ class KibaREPL:
             self.console.print("\n[bold]Conversation History:[/bold]")
             for msg in loaded_session.conversation.messages[-5:]:  # Show last 5 messages
                 role_color = "blue" if msg.role == "user" else "green"
-                self.console.print(f"[{role_color}]{msg.role}[/{role_color}]: {msg.content[:100]}...")
+                if isinstance(msg.content, str):
+                    preview = msg.content
+                else:
+                    preview = " ".join(
+                        getattr(b, "text", "") for b in (msg.content or [])
+                    ).strip() or "[non-text content]"
+                self.console.print(f"[{role_color}]{msg.role}[/{role_color}]: {preview[:100]}...")

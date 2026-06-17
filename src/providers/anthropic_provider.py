@@ -29,7 +29,10 @@ from ._retry import (
 # Default max output tokens. 4096 truncates large tool calls — e.g. a Write whose `content`
 # is a whole file — which corrupts the JSON arguments ("missing required field"). Raise it;
 # override per-model with KIBA_MAX_TOKENS.
-_DEFAULT_MAX_TOKENS = int(os.environ.get("KIBA_MAX_TOKENS") or 8192)
+try:
+    _DEFAULT_MAX_TOKENS = int(os.environ.get("KIBA_MAX_TOKENS") or 8192)
+except (TypeError, ValueError):
+    _DEFAULT_MAX_TOKENS = 8192  # bad env value must not crash the CLI at import
 
 
 class AnthropicProvider(BaseProvider):

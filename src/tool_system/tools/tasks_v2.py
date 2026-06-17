@@ -94,10 +94,12 @@ class TaskGetTool:
             name="TaskGet",
             output={
                 "task": {
-                    "id": task["id"],
-                    "subject": task["subject"],
-                    "description": task["description"],
-                    "status": task["status"],
+                    # Defensive .get: background-subagent task holders lack
+                    # description/blocks/blockedBy, so bracket access KeyErrors.
+                    "id": task.get("id", task_id),
+                    "subject": task.get("subject", ""),
+                    "description": task.get("description", ""),
+                    "status": task.get("status", ""),
                     "blocks": list(task.get("blocks") or []),
                     "blockedBy": list(task.get("blockedBy") or []),
                 }
