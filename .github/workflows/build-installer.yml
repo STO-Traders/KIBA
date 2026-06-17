@@ -24,6 +24,23 @@ jobs:
           if (-not (Test-Path "installer\dist\KIBA-Setup.exe")) { throw "KIBA-Setup.exe was not produced" }
           Get-Item "installer\dist\KIBA-Setup.exe" | Format-List Name, Length
 
+      - name: Code-sign KIBA-Setup.exe (only when a cert secret is configured)
+        if: ${{ secrets.WINDOWS_CERT_BASE64 != '' }}
+        shell: pwsh
+        env:
+          CERT_B64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          CERT_PW: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "kiba.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:CERT_B64))
+          $st = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
+                Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $st) { throw "signtool not found on the runner" }
+          & $st.FullName sign /f $pfx /p $env:CERT_PW /fd SHA256 /tr http://timestamp.sectigo.com /td SHA256 "installer\dist\KIBA-Setup.exe"
+          & $st.FullName verify /pa "installer\dist\KIBA-Setup.exe"
+          Remove-Item $pfx -Force
+          Write-Host "Signed KIBA-Setup.exe"
+
       - name: Upload as build artifact
         uses: actions/upload-artifact@v4
         with:
