@@ -245,6 +245,8 @@ class KibaREPL:
         self.settings = load_settings()
         apply_env(self.settings)
         self._settings_perms = get_permissions(self.settings)
+        # permissions.allow → tools auto-approved without a prompt (exact name, case-insensitive).
+        self._allow_tools = {str(t).lower() for t in (self._settings_perms.get("allow") or [])}
         self._mode = (self._settings_perms.get("defaultMode") or "").strip()
 
         # Load configuration
@@ -254,12 +256,20 @@ class KibaREPL:
             self.console.print("Run [bold]kiba login[/bold] to configure.")
             sys.exit(1)
 
-        # Initialize provider
-        provider_class = get_provider_class(provider_name)
+        # Initialize provider. The global settings.json "model" is a single value but each
+        # provider has a disjoint model namespace — honoring it blindly would push e.g. a
+        # "claude-*" model into the glm provider and 400 on the first request. Only honor it
+        # when it's valid for the active provider; otherwise fall back to this provider's own
+        # configured default_model (so a z.ai-proxied "anthropic" provider keeps glm-5.2).
+        from src.providers import PROVIDER_INFO
+        _settings_model = self.settings.get("model")
+        _available = PROVIDER_INFO.get(provider_name, {}).get("available_models", []) or []
+        _model = _settings_model if (_settings_model and _settings_model in _available) \
+            else config.get("default_model")
         self.provider = provider_class(
             api_key=config["api_key"],
             base_url=config.get("base_url"),
-            model=self.settings.get("model") or config.get("default_model"),
+            model=_model,
         )
 
         # Create a fresh session, or reuse one passed in (--continue / --resume)
@@ -519,6 +529,11 @@ class KibaREPL:
             Tuple of (allowed: bool, continue_without_caching: bool).
             continue_without_caching is always False since we don't cache in REPL.
         """
+        # settings.json permissions.allow: pre-approved tools never prompt — honor it before
+        # the TTY check so an allow-listed tool also runs in headless/piped mode.
+        if str(tool_name).lower() in self._allow_tools:
+            return (True, False)
+
         # No interactive TTY (headless/piped) → can't prompt; deny safely instead of
         # hanging on input(). Set KIBA_AUTO_APPROVE=1 for autonomous tool use.
         if not sys.stdin.isatty():

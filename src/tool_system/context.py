@@ -57,7 +57,10 @@ class ToolContext:
 
     def mark_file_read(self, path: Path) -> None:
         stat = path.stat()
-        self.read_file_fingerprints[path.resolve()] = (int(stat.st_mtime), int(stat.st_size))
+        # Nanosecond mtime, not int seconds: a same-second, same-size external edit (a
+        # one-char swap, a formatter re-save) would otherwise fingerprint as "unchanged"
+        # and let Write/Edit clobber it. Keep both methods symmetric.
+        self.read_file_fingerprints[path.resolve()] = (stat.st_mtime_ns, int(stat.st_size))
 
     def was_file_read_and_unchanged(self, path: Path) -> bool:
         resolved = path.resolve()
@@ -65,7 +68,7 @@ class ToolContext:
         if fingerprint is None:
             return False
         stat = resolved.stat()
-        return fingerprint == (int(stat.st_mtime), int(stat.st_size))
+        return fingerprint == (stat.st_mtime_ns, int(stat.st_size))
 
     def ensure_allowed_path(self, path: str | Path) -> Path:
         p = Path(path).expanduser() if isinstance(path, str) else path.expanduser()

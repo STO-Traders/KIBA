@@ -91,8 +91,11 @@ class Conversation:
         for ip in image_paths or []:
             try:
                 blocks.append(image_block_from_path(ip))
-            except Exception:
-                pass
+            except Exception as e:
+                # Don't silently drop an image the user explicitly attached — tell them why,
+                # so a typo'd path or unsupported format doesn't vanish without a trace.
+                import sys
+                print(f"kiba: could not attach image {ip!r}: {e}", file=sys.stderr)
         blocks.append(TextContentBlock(text=text))
         self.add_message("user", blocks)
 

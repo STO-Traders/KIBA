@@ -271,9 +271,12 @@ class OpenAICompatibleProvider(BaseProvider):
                 if function is not None:
                     fn_name = getattr(function, "name", None)
                     if fn_name:
-                        entry["name"] += str(fn_name)
+                        # Name arrives complete in one delta (OpenAI spec) — assign, don't
+                        # accumulate, or a provider that re-sends it yields "ReadRead".
+                        entry["name"] = str(fn_name)
                     fn_args = getattr(function, "arguments", None)
                     if fn_args:
+                        # Arguments ARE streamed in fragments — accumulate these.
                         entry["arguments"] += str(fn_args)
 
         tool_uses: list[dict[str, Any]] = []
