@@ -128,7 +128,7 @@ This is the initial MVP release. No migration needed.
 
 ### v0.1.0 - MVP Release
 
-This is the first public release of Kiba, a complete reimplementation of Claude Code. This MVP includes:
+This is the first public release of KIBA, an agentic AI coding platform for the terminal. This MVP includes:
 
 - Full multi-provider support
 - Interactive REPL
@@ -139,8 +139,6 @@ This is the first public release of Kiba, a complete reimplementation of Claude 
 
 The focus was on building a solid foundation with clean architecture, comprehensive testing, and good developer experience. All core features are working and tested.
 
-**Special Thanks**: This project is inspired by Claude Code and aims to provide an open-source alternative for learning and experimentation.
-
 ---
 
-[0.1.0]: https://github.com/GPT-AGI/Kiba/releases/tag/v0.1.0
+[0.1.0]: https://github.com/STO-Traders/KIBA/releases/tag/v0.1.0

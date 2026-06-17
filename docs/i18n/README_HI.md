@@ -10,8 +10,8 @@
 
 ***
 
-[![GitHub stars](https://img.shields.io/github/stars/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=yellow)](https://github.com/GPT-AGI/Kiba/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/GPT-AGI/Kiba?style=for-the-badge&logo=github&color=blue)](https://github.com/GPT-AGI/Kiba/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/STO-Traders/KIBA?style=for-the-badge&logo=github&color=yellow)](https://github.com/STO-Traders/KIBA/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/STO-Traders/KIBA?style=for-the-badge&logo=github&color=blue)](https://github.com/STO-Traders/KIBA/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 
@@ -59,11 +59,11 @@
 
 ## ⭐ Star History
 
-<a href="https://www.star-history.com/?repos=GPT-AGI%2FKiba&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=STO-Traders%2FKIBA&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=GPT-AGI%2FKiba&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=STO-Traders%2FKIBA&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=STO-Traders%2FKIBA&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=STO-Traders%2FKIBA&type=date&legend=top-left" />
  </picture>
 </a>
 
@@ -120,7 +120,7 @@ kiba config       # सेटिंग्स देखें
 ### इंस्टॉल करें
 
 ```bash
-git clone https://github.com/GPT-AGI/Kiba.git
+git clone https://github.com/STO-Traders/KIBA.git
 cd Kiba
 
 # venv बनाएं (uv अनुशंसित)

@@ -5,12 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "kiba"
 version = "0.1.0"
-description = "A complete Python reimplementation of Claude Code CLI - Drop-in replacement experience"
+description = "KIBA — an agentic AI coding platform for your terminal. Bring your own model (Claude, GLM, GPT, Minimax)."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
-    {name = "Kiba Team", email = "team@example.com"}
+    {name = "STO Algo LLC"},
+    {name = "J_Trades"}
 ]
 keywords = ["claude", "cli", "ai", "llm", "anthropic", "openai", "glm"]
 classifiers = [
@@ -44,9 +45,9 @@ dev = [
 kiba = "src.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/GPT-AGI/Kiba"
-Repository = "https://github.com/GPT-AGI/Kiba"
-Documentation = "https://github.com/GPT-AGI/Kiba#readme"
+Homepage = "https://github.com/STO-Traders/KIBA"
+Repository = "https://github.com/STO-Traders/KIBA"
+Documentation = "https://github.com/STO-Traders/KIBA#readme"
 
 [tool.setuptools.packages.find]
 where = ["."]

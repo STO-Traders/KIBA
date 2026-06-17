@@ -1,7 +1,7 @@
-"""Kiba - Claude Code Python Implementation."""
+"""KIBA — an agentic AI coding platform for the terminal."""
 
 __version__ = "0.1.0"
-__author__ = "Kiba Team"
+__author__ = "STO Algo LLC"
 
 from .config import load_config, get_provider_config
 
