@@ -1,6 +1,6 @@
 """KIBA — an agentic AI coding platform for the terminal."""
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 __author__ = "STO Algo LLC"
 
 from .config import load_config, get_provider_config

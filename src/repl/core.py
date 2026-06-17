@@ -1694,37 +1694,49 @@ class KibaREPL:
                         hr.run("Stop", {"response": direct_response})
                     return
 
-            # Use agent loop with tools for any provider that supports it
-            self._current_status = self.console.status(f"[dim]{random.choice(KIBA_STATUS_WORDS)}…[/dim]", spinner="dots")
-            with self._current_status:
-                result = run_agent_loop(
-                    conversation=self.session.conversation,
-                    provider=self.provider,
-                    tool_registry=self.tool_registry,
-                    tool_context=self.tool_context,
-                    max_turns=max_turns,
-                    stream=self.stream,
-                    verbose=False,
-                    on_event=on_event,
-                    on_text_chunk=on_text_chunk if self.stream else None,
-                )
-            self._current_status = None
-
-            # Record usage to cost tracker
-            if result.usage:
-                input_tokens = result.usage.get("input_tokens", 0)
-                output_tokens = result.usage.get("output_tokens", 0)
-                if input_tokens > 0 or output_tokens > 0:
-                    self.cost_tracker.record(
-                        f"turn_{result.num_turns}_tokens",
-                        input_tokens + output_tokens
+            # Use agent loop with tools. Auto-resume: if the model hits the per-request
+            # turn limit mid-task, automatically continue a bounded number of times
+            # (KIBA_MAX_AUTO_CONTINUE, default 3) instead of stopping cold.
+            try:
+                _auto_rounds = int(os.environ.get("KIBA_MAX_AUTO_CONTINUE") or 3)
+            except (TypeError, ValueError):
+                _auto_rounds = 3
+            _agg_in = _agg_out = 0
+            _round = 0
+            while True:
+                self._current_status = self.console.status(f"[dim]{random.choice(KIBA_STATUS_WORDS)}…[/dim]", spinner="dots")
+                with self._current_status:
+                    result = run_agent_loop(
+                        conversation=self.session.conversation,
+                        provider=self.provider,
+                        tool_registry=self.tool_registry,
+                        tool_context=self.tool_context,
+                        max_turns=max_turns,
+                        stream=self.stream,
+                        verbose=False,
+                        on_event=on_event,
+                        on_text_chunk=on_text_chunk if self.stream else None,
                     )
-                    # Model-aware token + cost accounting (for /cost)
-                    _model = getattr(self.provider, "model", None)
-                    self.cost_tracker.record_usage(_model, input_tokens, output_tokens)
-                    # Also update command context for new commands
-                    if hasattr(self, 'command_context') and self.command_context:
-                        self.command_context.cost_tracker = self.cost_tracker
+                self._current_status = None
+                if result.usage:
+                    _agg_in += result.usage.get("input_tokens", 0)
+                    _agg_out += result.usage.get("output_tokens", 0)
+                if getattr(result, "hit_turn_limit", False) is True and _round < _auto_rounds:
+                    _round += 1
+                    self.console.print(
+                        f"[dim]… still working — continuing past the {max_turns}-turn "
+                        f"limit (auto-continue {_round}/{_auto_rounds})…[/dim]"
+                    )
+                    continue
+                break
+
+            # Record aggregated usage across all auto-continue rounds
+            if _agg_in > 0 or _agg_out > 0:
+                self.cost_tracker.record(f"turn_{result.num_turns}_tokens", _agg_in + _agg_out)
+                _model = getattr(self.provider, "model", None)
+                self.cost_tracker.record_usage(_model, _agg_in, _agg_out)
+                if hasattr(self, 'command_context') and self.command_context:
+                    self.command_context.cost_tracker = self.cost_tracker
 
             if self.stream and stream_started:
                 self.console.print()

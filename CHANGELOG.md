@@ -16,6 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README and contributor docs now prefer `uv`-based setup instructions
 - Documentation now distinguishes provider-level streaming interfaces from the current turn-based CLI output
 
+## [1.2.3] - 2026-06-17
+
+### Added
+- Auto-resume: if a request hits the per-turn limit mid-task, KIBA now automatically
+  continues a bounded number of times (`KIBA_MAX_AUTO_CONTINUE`, default 3) instead of
+  stopping cold, showing an "auto-continue N/M" notice each round.
+- Graceful chunking: when a tool call's arguments are truncated at the output-token limit
+  (so required fields arrive empty), KIBA returns an actionable hint telling the model to
+  split the work (Write the first part, then Edit/append the rest) instead of a cryptic
+  "missing required field" error. The agent loop recovers automatically.
+
 ## [1.2.2] - 2026-06-17
 
 ### Fixed
@@ -171,6 +182,7 @@ The focus was on building a solid foundation with clean architecture, comprehens
 
 ---
 
+[1.2.3]: https://github.com/STO-Traders/KIBA/releases/tag/v1.2.3
 [1.2.2]: https://github.com/STO-Traders/KIBA/releases/tag/v1.2.2
 [1.2.1]: https://github.com/STO-Traders/KIBA/releases/tag/v1.2.1
 [0.1.0]: https://github.com/STO-Traders/KIBA/releases/tag/v0.1.0

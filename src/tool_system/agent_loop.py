@@ -107,6 +107,7 @@ class AgentLoopResult:
     response_text: str
     usage: dict[str, Any] | None = None  # {"input_tokens": int, "output_tokens": int}
     num_turns: int = 0
+    hit_turn_limit: bool = False  # True when the loop stopped only because max_turns ran out
 
 
 ToolEventHandler = Callable[[ToolEvent], None]
@@ -393,7 +394,7 @@ def run_agent_loop(
             )
 
         # ---- Execute tools: read-only ones concurrently, side-effecting ones serially ----
-        from ..tool_system.protocol import ToolCall
+        from ..tool_system.protocol import ToolCall, ToolResult
         from concurrent.futures import ThreadPoolExecutor
 
         def _is_readonly(name: str) -> bool:
@@ -411,7 +412,38 @@ def run_agent_loop(
                           tool_input=tu["input"], tool_use_id=tu["id"]),
             )
 
+        # Graceful chunking: if the response was cut off at the output-token limit,
+        # the (last) tool call's JSON arguments are likely incomplete — its required
+        # fields arrive empty. Don't surface a cryptic "missing required field"; return
+        # an actionable hint so the model retries in smaller pieces.
+        _truncated = (getattr(response, "finish_reason", "") or "") == "max_tokens"
+
+        def _looks_truncated(tu) -> bool:
+            if not _truncated:
+                return False
+            inp = tu.get("input") or {}
+            try:
+                req = list((tool_registry.get(tu["name"]).spec().input_schema or {}).get("required") or [])
+            except Exception:
+                req = []
+            return bool(req) and any(r not in inp for r in req)
+
+        _TRUNCATION_HINT = (
+            "This tool call was cut off at the model's output-token limit before its "
+            "arguments finished, so its content never arrived. The payload was too large "
+            "for one message. Retry by splitting the work: for a file, Write the first "
+            "portion of the content, then use Edit (or another Write) to append the rest "
+            "in follow-up calls. Keep each call's content well under the limit."
+        )
+
         def _dispatch(tu):
+            if _looks_truncated(tu):
+                return ToolResult(
+                    name=tu["name"],
+                    output={"error": _TRUNCATION_HINT, "reason": "output_truncated"},
+                    is_error=True,
+                    tool_use_id=tu["id"],
+                )
             return tool_registry.dispatch(
                 ToolCall(name=tu["name"], input=tu["input"], tool_use_id=tu["id"]),
                 tool_context,
@@ -507,4 +539,5 @@ def run_agent_loop(
         ),
         usage=total_usage if total_usage["input_tokens"] > 0 or total_usage["output_tokens"] > 0 else None,
         num_turns=turn_count,
+        hit_turn_limit=True,
     )
