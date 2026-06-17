@@ -39,10 +39,20 @@ green "Kiba installed."
 
 KIBA_BIN="$SCRIPT_DIR/.venv/bin/kiba"
 
-# 3b) put `kiba` on PATH so it works from ANY shell (~/.local/bin is already on PATH via uv)
+# 3b) put `kiba` on PATH so it works from ANY shell
 mkdir -p "$HOME/.local/bin"
 ln -sf "$KIBA_BIN" "$HOME/.local/bin/kiba"
-green "Linked 'kiba' into ~/.local/bin (works from any new shell)."
+# Ensure ~/.local/bin is on PATH for FUTURE shells (uv usually adds it; make sure
+# for both zsh and bash so a new terminal always finds `kiba`).
+for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+  if [ "$rc" = "$HOME/.zshrc" ] || [ -f "$rc" ]; then
+    if ! grep -qs '\.local/bin' "$rc" 2>/dev/null; then
+      printf '\n# Added by KIBA installer\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$rc"
+    fi
+  fi
+done
+export PATH="$HOME/.local/bin:$PATH"  # this install process
+green "Linked 'kiba' into ~/.local/bin and ensured it's on PATH for new shells."
 
 # 4) run the guided setup wizard if we're in an interactive terminal
 if [ -t 0 ] && [ -t 1 ]; then
@@ -58,10 +68,14 @@ green "
 ✅  Kiba is ready!"
 cat <<EOF
 
-Start Kiba in a new terminal (kiba is now on your PATH):
+Start Kiba:
   kiba --stream
 
-If your shell can't find it yet, open a new terminal, or run directly:
+A NEW terminal will find 'kiba' automatically. To use it in THIS terminal
+without opening a new one, run this once:
+  export PATH="\$HOME/.local/bin:\$PATH"
+
+Or run it directly any time:
   "$KIBA_BIN" --stream
 
 Re-run setup later with:  kiba setup

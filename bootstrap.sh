@@ -24,4 +24,14 @@ else
 fi
 
 cd "$DEST"
-exec bash ./install.sh
+bash ./install.sh
+
+# The installer linked `kiba` into ~/.local/bin and added it to PATH for new shells.
+# A `curl | bash` one-liner runs in a subshell, so we can't change the PATH of the
+# terminal you're sitting in — but we hand you the exact one-liner to do it now.
+if command -v kiba >/dev/null 2>&1 || [ -x "$HOME/.local/bin/kiba" ]; then
+  echo
+  cyan "kiba is installed."
+  echo "  • New terminals: just run   kiba --stream"
+  echo "  • THIS terminal: run once   export PATH=\"\$HOME/.local/bin:\$PATH\"   (then: kiba --stream)"
+fi
