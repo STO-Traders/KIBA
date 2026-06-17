@@ -1,4 +1,4 @@
-# Kiba installer — Windows (PowerShell)
+# Kiba installer - Windows (PowerShell)
 # Installs uv + Python 3.11, builds the venv, installs Kiba, then runs the setup wizard.
 $ErrorActionPreference = "Stop"
 
@@ -68,5 +68,5 @@ Write-Host ""
 Write-Host "Start Kiba with:"
 Write-Host "  kiba --stream"
 Write-Host ""
-Write-Host "(If 'kiba' isn't found in an old terminal, open a new one — PATH was updated.)"
+Write-Host "(If 'kiba' isn't found in an old terminal, open a new one - PATH was updated.)"
 Write-Host "Re-run setup later with:  kiba setup"

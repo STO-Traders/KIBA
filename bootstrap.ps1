@@ -1,8 +1,8 @@
-# Kiba one-line web installer — Windows (PowerShell).
+# Kiba one-line web installer - Windows (PowerShell).
 #   irm https://raw.githubusercontent.com/STO-Traders/KIBA/main/bootstrap.ps1 | iex
 #
 # Clones (or updates) Kiba, then runs the Windows installer + setup wizard.
-# Run from a normal PowerShell window — no admin needed.
+# Run from a normal PowerShell window - no admin needed.
 $ErrorActionPreference = "Stop"
 
 $RepoUrl = if ($env:KIBA_REPO) { $env:KIBA_REPO } else { "https://github.com/STO-Traders/KIBA.git" }
@@ -32,7 +32,7 @@ Set-Location $Dest
 powershell -ExecutionPolicy Bypass -File (Join-Path $Dest "install.ps1")
 
 # Refresh THIS session's PATH from the persisted (registry) Machine + User values so
-# `kiba` works immediately in the current window — no need to open a new terminal.
+# `kiba` works immediately in the current window - no need to open a new terminal.
 $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
 $userPath    = [Environment]::GetEnvironmentVariable("Path", "User")
 $env:Path = (@($machinePath, $userPath) | Where-Object { $_ }) -join ";"

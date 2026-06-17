@@ -266,6 +266,7 @@ class KibaREPL:
         _available = PROVIDER_INFO.get(provider_name, {}).get("available_models", []) or []
         _model = _settings_model if (_settings_model and _settings_model in _available) \
             else config.get("default_model")
+        provider_class = get_provider_class(provider_name)
         self.provider = provider_class(
             api_key=config["api_key"],
             base_url=config.get("base_url"),
